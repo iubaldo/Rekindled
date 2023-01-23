@@ -58,7 +58,7 @@ namespace rekindled.src
                     return;
                 }
 
-                block.Attributes.SetInt("durability", block.GetDurability - 1);
+                // block.Attributes.SetInt("durability", block.GetDurability - 1);
                 oneSecAccum = 0f;
                 System.Diagnostics.Debug.WriteLine("[Rekindled] tick! durability of " + block.GetPlacedBlockName(Api.World, Pos) + " is now " + block.Durability);
                 

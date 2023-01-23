@@ -22,8 +22,8 @@ namespace rekindled.src
 
             System.Diagnostics.Debug.WriteLine("LOADING REKINDLED MAIN");
 
-            api.RegisterBlockClass("blockrekindledtorch", typeof(BlockRekindledTorch));
-            api.RegisterBlockEntityClass("blockentityextinguishable", typeof(BlockEntityExtinguishable));
+            // api.RegisterBlockClass("blockrekindledtorch", typeof(BlockRekindledTorch));
+            // api.RegisterBlockEntityClass("blockentityextinguishable", typeof(BlockEntityExtinguishable));
         }
     }
 }

@@ -42,23 +42,12 @@
     <Reference Include="System.Xml" />
     <Reference Include="VintagestoryAPI">
       <HintPath>D:\Games\Vintagestory\VintagestoryAPI.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="VSSurvivalMod">
-      <HintPath>D:\Games\Vintagestory\Mods\VSSurvivalMod.dll</HintPath>
-      <Private>False</Private>
     </Reference>
     <Reference Include="VSEssentials">
       <HintPath>D:\Games\Vintagestory\Mods\VSEssentials.dll</HintPath>
-      <Private>False</Private>
     </Reference>
-    <Reference Include="VSCreativeMod">
-      <HintPath>D:\Games\Vintagestory\Mods\VSCreativeMod.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="Newtonsoft.Json">
-      <HintPath>D:\Games\Vintagestory\Lib\Newtonsoft.Json.dll</HintPath>
-      <Private>False</Private>
+    <Reference Include="VSSurvivalMod">
+      <HintPath>D:\Games\Vintagestory\Mods\VSSurvivalMod.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>

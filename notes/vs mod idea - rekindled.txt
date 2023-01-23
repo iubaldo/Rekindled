@@ -1,0 +1,157 @@
+all light sources have limited burn time in the form of durability and are now unstackable when lit
+
+light sources come in 3 forms: lit, unlit, extinguished, and burned out
+	
+	lit - currently consuming fuel, unstackable
+	unlit - "fresh" light source, never been used, stackable
+	extinguished - "used" light souce, hasn't burnt out yet and still has fuel, unstackable
+	burntout - no fuel remaining, stackable
+
+	extinguished refers to having been previously lit, while unlit refers to being "fresh"
+	lit and extinguished forms have durability and cannot be stacked
+	lit sources can be converted to extinguished forms in the crafting grid or by right-clicking them with an empty hand when placed
+		useful to stop consuming durability when not needed	
+	lit sources will constantly lose durability when burning, even when in the inventory
+		when in the inventory, lit sources will lose durability slower
+			doesn't apply when held in the hand
+		lit sources will cause the player to emit light when in the inventory
+		only the strongest light source will take effect
+	extinguished light sources can be replenished with fresh fuel to convert back to unlit forms
+		if placed as a block, the source can be refueled by right-clicking them with the appropriate item in hand
+		ex. additional animal fat for oil lamps
+		ex. fresh cloth/fat for torches
+			note: burnt out torches should have a chance to crumble into nothing when interacted with or broken
+	using a viable lit source to light another source will consume a small part of its durability
+	swimming will immediately extinguish all lit sources in the inventory
+	
+in order of burn time:
+	crude torch < tallow candle < oil lamp < basic torch < torch holder (crude) < candle < torch holder (basic) < cloth torch < torch holder (cloth) < lantern 
+	
+add/modify light sources
+	rushlights
+		created from rush stems (need to check if that's currently in the game or not)
+	tallow candle
+		created from twine and animal fat
+		slightly less bright than wax candles
+		less durability than wax candles
+	oil lamp
+		add 1 twine to recipe
+		refueled with animal fat and twine
+	torch
+		add 1 animal fat to all recipes
+		unlit torches can be lit on a valid source (other torches, firepits, candles, oil lamps)
+	lantern
+		refueled with unlit candles
+		
+add new firestarting tools and rebalance the vanilla one
+	all firestarters now require a tinder to be in the offhand to work
+	firestarter
+		takes much, much longer to start a fire
+		much lower durability
+		consumes a small amount of health (blisters, soreness)
+		consumes a large amount of satiety
+	bow drill
+		recipe: fire bow + fireboard + notched stick + knife + gouged stone
+		faster than a firestarter
+		higher durability than a firestarter
+		consumes much less satiety than a firestarter
+	pump drill
+		recipe: fireboard + notched stick + stone flywheel + 3 twine
+		slightly faster than a bow drill
+		higher durability than a bow drill
+		consumes slightly less satiety than a firestarter
+		
+other new items/recipes
+	tinder
+		needed in offhand to light a fire with a firestarting tool
+		recipe: 9 dry grass
+	fire bow
+		used for bow drill
+		recipe: 3 sticks + 3 rope + knife (consumes an entire stone knife's durability)
+	notched stick
+		used for firestarting tools
+		reicpe: stick + knife (consumes half a stone knife's durability)
+	fireboard
+		used for firestarting tools
+		recipe: notched stick + knife (consumes half a stone knife's durability)
+	indented stone -> or just make this a knapping recipe, dumbass
+		step 1 of stone flywheel
+		recipe: stone (knappable) + stone (knappable)
+	notched stone
+		step 2 of stone flywheel
+		recipe: indented stone + stone (knappable)
+	gouged stone
+		step 3 of stone flywheel
+		used for firestarting tools
+		recipe: notched stone + stone (knappable)
+	stone flywheel
+		used for the pump drill
+		recipe: gouged stone + stone (knappable)
+	charcoal
+		recycle burned out torches
+		recipe: burned out torch (any type)
+	
+
+
+other ideas:
+	can right-click a candle to get an estimate on how long since it started burning
+	scale brightness with remaining fuel
+	temporal sensor
+		can be used on a light source to make it extinguish/light automatically depending on local light level
+	temporal lantern
+		doesn't actually produce light
+		halves burn out rate of light sources within a radius
+		will burn out, can be refueled by temporal gears
+	temporal candle
+		same as temporal lantern, but easier to produce and lower burn time
+
+some sources:
+	https://mymodernmet.com/candle-clock-alarm/
+	
+	
+implementation details
+	need a way to track current "durability" -> fuel
+		can use logic similar to item transitions, rotting/curing/etc
+		might use tree attributes to store custom values and update them
+	need a way to sync fuel between block and dropped item (entityItem)
+		call onblockbroken or similar to copy current fuel to item form
+			both blocks and items inherit from "collectible" (class name is collectibleobject)
+			not blockentities, just the block/blockbehavior
+			might need to hook into the block the blockentitybehavior is attached to, idk how to do that though
+			might not even need to use block entity behavior since the data is copied when broken, don't need to save it
+		entityItem does have a reference to the itemStack it's holding, so might not be necessary
+			itemStack has a reference to the item/block it's holding, too
+	will probably want to only do updates to fuel serverside
+	to show durability, find out how durability bars are rendered, and just make them render based on fuel instead
+	might have to copy implementation for registerGameTickListerner from blockEntity for the custom blockentitybehavior
+	try looking at collectible settemperature on how to update an attribute in realtime
+		collectible also has onGroundIdle, which is called every tick when the item is dropped in the world
+	items can still tick transitions when in the world, but don't complete the transition until picked up and put into the inventory
+	transitionableProperties are used in collectible.AppendPerishableInfoText to append current status to collectible.GetHeldItemInfo
+	
+	store fuel info between blockEntityBehavior when placed, and itemStack when in item form
+		both have treeAttributes
+		when block is broken, use onBlockBroken to save BEB attributes to itemStack
+		when block is placed, use onBlockPlaced to move itemStack attributes using the fromItemStack argument
+		need to check if attribute exists when block is first picked up or placed, and create it if not
+			use json for this?
+				read from block json, then use patches to add the necessary information to each vanilla light source
+		
+		need to copy transition code for making the switch when fuel runs out
+			look at blockTorch for transient blocks
+			look at any meat for item transitions
+		
+		concerns:
+			how to transition entityItems when dropped in the world, game doesn't do that currently
+			how to tick fuel when item is in an itemStack, there is no itemStackBehavior class 
+			
+		can try storing the attributes in the block's json attributes instead of a treeAttributes variable
+		
+		will probably still need to use TransientBlockEntity for light sources to correctly transition while placed
+	
+	notes:
+		on the block system
+			block/blockbehavior are stateless - don't store information
+				block is also only loaded once, and is shared with every block with the same ID
+			blockentity/blockentitybehavior are stateful - store information
+			behaviors are nearly the same as their base, but can be tacked on to any amount of blocks in any amount
