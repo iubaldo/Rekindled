@@ -6,4 +6,7 @@
     <StartProgram>D:\Games\Vintagestory\Vintagestory.exe</StartProgram>
     <StartWorkingDirectory>D:\Games\Vintagestory\</StartWorkingDirectory>
   </PropertyGroup>
+  <PropertyGroup>
+    <ProjectView>ShowAllFiles</ProjectView>
+  </PropertyGroup>
 </Project>
