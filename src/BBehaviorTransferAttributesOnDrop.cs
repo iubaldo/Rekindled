@@ -47,7 +47,9 @@ namespace rekindled.src
 
             if(Array.IndexOf(block.BlockEntityBehaviors, typeof(BEBehaviorTransientLight)) > -1)
             {
-                // might move this to the BEBehavior, since Block doesn't have access to BlockEntity, but the reverse it true
+                // transfer attributes to toDrop itemStack
+                // might move this to the BEBehavior, since Block doesn't have access to BlockEntity, but the reverse is true
+                // or modify block.Drops (which is a BlockDropItemStack)
             }
 
             handling = EnumHandling.PreventDefault; // want to fully override base function
