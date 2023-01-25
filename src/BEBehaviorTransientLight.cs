@@ -26,7 +26,7 @@ namespace rekindled.src
 
 
     // A custom version of BlockEntityTransient, specifically for light sources
-    class BEBehaviorTransientLight : BlockEntity
+    class BEBehaviorTransientLight : BlockEntityBehavior
     {
         public virtual int CheckIntervalMs { get; set; } = 2000; // every 2 seconds
 
@@ -39,30 +39,35 @@ namespace rekindled.src
 
         public string ConvertToOverride; // overrides ConvertTo in TransientLightProperties
 
-        public override void Initialize(ICoreAPI api)
+        public BEBehaviorTransientLight(BlockEntity blockentity) : base(blockentity) { }
+
+        public override void Initialize(ICoreAPI api, JsonObject properties)
         {
-            base.Initialize(api);
-            if (Block.Attributes?["transientLightProps"].Exists != true) return;
+            base.Initialize(api, properties);
+            if (Blockentity.Block.Attributes?["transientLightProps"].Exists != true) return;
 
             // Sanity check
             if (api.Side == EnumAppSide.Server)
             {
-                var block = Api.World.BlockAccessor.GetBlock(Pos);
-                if (block.Id != Block.Id)
+                var block = Api.World.BlockAccessor.GetBlock(Blockentity.Pos);
+                if (block.Id != Blockentity.Block.Id)
                 {
-                    Api.World.Logger.Error("BEBehaviorTransientLight @{0} for Block {1}, but there is {2} at this position? Will delete BE", Pos, this.Block.Code.ToShortString(), block.Code.ToShortString());
+                    Api.World.Logger.Error("BEBehaviorTransientLight @{0} for Block {1}, but there is {2} at this position? Will delete BE", Blockentity.Pos, this.Blockentity.Block.Code.ToShortString(), block.Code.ToShortString());
                     // Can't delete during init
-                    api.Event.EnqueueMainThreadTask(() => api.World.BlockAccessor.RemoveBlockEntity(Pos), "delete betransientlight");
+                    api.Event.EnqueueMainThreadTask(() => api.World.BlockAccessor.RemoveBlockEntity(Blockentity.Pos), "delete betransientlight");
                     return;
                 }
             }
 
-            props = Block.Attributes["transientLightProps"].AsObject<TransientLightProperties>();
+            props = Blockentity.Block.Attributes["transientLightProps"].AsObject<TransientLightProperties>();
             if (props == null) 
                 return;
 
-            if (CurrentFuel <= 0)
-                CurrentFuel = props.TotalFuel;           
+            if (CurrentFuel < 0) // 
+            {
+                CurrentFuel = props.TotalFuel;
+                SetBlockDrops(props.TotalFuel);
+            }               
 
             if (api.Side == EnumAppSide.Server)
             {
@@ -70,17 +75,17 @@ namespace rekindled.src
                 {
                     throw new InvalidOperationException("Initializing BEBehaviorTransientLight twice would create a memory and performance leak");
                 }
-                listenerId = RegisterGameTickListener(CheckTransition, CheckIntervalMs);
+                listenerId = Blockentity.RegisterGameTickListener(CheckTransition, CheckIntervalMs);
             }
         }
 
         public void CheckTransition(float deltaTime)
         {
-            Block block = Api.World.BlockAccessor.GetBlock(Pos);
+            Block block = Api.World.BlockAccessor.GetBlock(Blockentity.Pos);
             if (block.Attributes == null)
             {
-                Api.World.Logger.Error("BEBehaviorTransientLight @{0}: cannot find block attributes for {1}. Will stop transient timer", Pos, this.Block.Code.ToShortString());
-                UnregisterGameTickListener(listenerId);
+                Api.World.Logger.Error("BEBehaviorTransientLight @{0}: cannot find block attributes for {1}. Will stop transient timer", Blockentity.Pos, this.Blockentity.Block.Code.ToShortString());
+                Blockentity.UnregisterGameTickListener(listenerId);
                 return;
             }
 
@@ -103,7 +108,7 @@ namespace rekindled.src
 
         public void TryTransition(string toCode)
         {
-            Block block = Api.World.BlockAccessor.GetBlock(Pos);
+            Block block = Api.World.BlockAccessor.GetBlock(Blockentity.Pos);
             Block tblock;
 
             if (block.Attributes == null) return;
@@ -120,7 +125,7 @@ namespace rekindled.src
                 tblock = Api.World.GetBlock(new AssetLocation(toCode));
                 if (tblock == null) return;
 
-                Api.World.BlockAccessor.SetBlock(tblock.BlockId, Pos);
+                Api.World.BlockAccessor.SetBlock(tblock.BlockId, Blockentity.Pos);
                 return;
             }
 
@@ -132,7 +137,7 @@ namespace rekindled.src
             tblock = Api.World.GetBlock(blockCode);
             if (tblock == null) return;
 
-            Api.World.BlockAccessor.SetBlock(tblock.BlockId, Pos);
+            Api.World.BlockAccessor.SetBlock(tblock.BlockId, Blockentity.Pos);
         }
 
         public override void FromTreeAttributes(ITreeAttribute tree, IWorldAccessor worldAccessForResolve)
@@ -152,12 +157,20 @@ namespace rekindled.src
         }
 
         // transfer attributes from itemStack.Block.Attributes
-        public override void OnBlockPlaced(ItemStack byItemStack = null)
+        public override void OnBlockPlaced()
         {
-            base.OnBlockPlaced(byItemStack);
+           // need a way to access fromStack
+        }
+
+        void SetBlockDrops(float currentFuel)
+        {
+            Block block = Blockentity.Block;
+
+            foreach (BlockDropItemStack blockDrop in block.Drops) {
+                blockDrop.ResolvedItemstack.Attributes.SetFloat("totalFuel", props.TotalFuel);
+                blockDrop.ResolvedItemstack.Attributes.SetFloat("currentFuel", props.TotalFuel);
+                blockDrop.ResolvedItemstack.Attributes.SetFloat("depletionMul", props.TotalFuel);
+            }
         }
     }
-
-
-
 }
