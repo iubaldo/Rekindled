@@ -16,11 +16,13 @@ using Vintagestory.API.Util;
 namespace rekindled.src
 {
     // this behavior checks if the block has TransientLightProps, and transfers those props to the itemStack dropped when the block is broken
-    class BBehaviorTransferAttributesOnDrop : BlockBehavior
+    class BlockBehaviorTransientLight : BlockBehavior
     {
         float dropQuantityMultiplier = 1;
 
-        public BBehaviorTransferAttributesOnDrop(Block block) : base(block) { }
+
+        public BlockBehaviorTransientLight(Block block) : base(block) { }
+
 
         public override ItemStack[] GetDrops(IWorldAccessor world, BlockPos pos, IPlayer byPlayer, ref float dropChanceMultiplier, ref EnumHandling handling)
         {
@@ -56,14 +58,54 @@ namespace rekindled.src
             return toDrop.ToArray();
         }
 
+
+        public override ItemStack OnPickBlock(IWorldAccessor world, BlockPos pos, ref EnumHandling handling)
+        {
+            ItemStack stack = new ItemStack(block);
+            BlockEntity be = world.BlockAccessor.GetBlockEntity(pos);
+
+            handling = EnumHandling.PassThrough;
+            foreach (BlockEntityBehavior behavior in be.Behaviors)
+            {
+                if (behavior is BEBehaviorTransientLight)
+                {
+                    stack.Attributes.SetFloat("timeLastChecked", behavior.properties["timeLastChecked"].AsFloat());
+                    stack.Attributes.SetFloat("currentFuel", behavior.properties["currentFuel"].AsFloat());
+                    stack.Attributes.SetFloat("currentDepletionMul", behavior.properties["currentFuel"].AsFloat());
+
+                    handling = EnumHandling.PreventDefault; 
+                }                        
+            }
+                      
+            base.OnPickBlock(world, pos, ref handling); // will only prevent default if attributes successfully set
+            return stack;
+        }
+
+
+        public override void OnBlockBroken(IWorldAccessor world, BlockPos pos, IPlayer byPlayer, ref EnumHandling handling)
+        {
+
+
+            base.OnBlockBroken(world, pos, byPlayer, ref handling);
+        }
+
+
         public override string GetHeldBlockInfo(IWorldAccessor world, ItemSlot inSlot)
         {
             return base.GetHeldBlockInfo(world, inSlot);
         }
 
+
         public override string GetPlacedBlockInfo(IWorldAccessor world, BlockPos pos, IPlayer forPlayer)
         {
             return base.GetPlacedBlockInfo(world, pos, forPlayer);
         }
+
+
+        /*
+         * notes
+         * look at BlockLantern for an example of using PickBlock to generate the itemStack made for OnBlockBroken
+         * and then also remember to prevent default for OnBlockBroken
+         */
     }
 }
