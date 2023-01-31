@@ -54,12 +54,12 @@
     <Content Include="modinfo.json" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="src\BlockEntityExtinguishable.cs" />
-    <Compile Include="src\BlockRekindledTorch.cs" />
-    <Compile Include="src\BEBehaviorTransient.cs" />
+    <Compile Include="src\BEBehaviorTransientLight.cs" />
+    <Compile Include="src\BlockBehaviorTransientLight.cs" />
     <Compile Include="src\EnumLitState.cs" />
     <Compile Include="src\RedirectLogs.cs" />
     <Compile Include="src\RekindledMain.cs" />
+    <Compile Include="src\TransitionableLightProperties.cs" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="assets\" />

@@ -16,9 +16,17 @@ namespace rekindled.src
 {
 
     /*
-     * notes:
-     * register a gameticklistener server-side to tick light sources instead of doing in within the block itself
-     * IWorldAccessor.GetEntitiesAround for ticking dropped entityItems
+     * TODO:
+     * 
+     * edit light source info to read:
+     *  State: lightState
+     *  Fuel: x%
+     *  Time Remaining: x time (copy syntax of food spoilage)
+     *  
+     * patch-add "lightState" variant code to light sources and use that to determine model
+     *  remove "state" from torch and replace with lightState
+     * 
+     * patch-reenable unused torches and recipes
      */
 
     class RekindledMain : ModSystem
@@ -31,7 +39,7 @@ namespace rekindled.src
 
             System.Diagnostics.Debug.WriteLine("LOADING REKINDLED MAIN");
 
-            api.RegisterBlockBehaviorClass("bbehaviortransferattributesondrop", typeof(BlockBehaviorTransientLight));
+            api.RegisterBlockBehaviorClass("blockbehaviortransientlight", typeof(BlockBehaviorTransientLight));
             api.RegisterBlockEntityBehaviorClass("bebehaviortransientlight", typeof(BEBehaviorTransientLight));
         }
 
@@ -65,6 +73,15 @@ namespace rekindled.src
                     }
                 }
             }
+        }
+
+
+        void TryTransitionLightSource(ItemStack stack, TransientLightProperties props)
+        {
+            var behavior = stack.Block.GetBehavior(typeof(BlockBehaviorTransientLight)) as BlockBehaviorTransientLight;
+            Block toBlock = behavior.TryGetBlockTransition(sapi.World, props);
+            if (toBlock != null)
+                stack.Block = toBlock;
         }
 
 

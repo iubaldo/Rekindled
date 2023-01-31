@@ -85,7 +85,7 @@ namespace rekindled.src
         public override void OnBlockBroken(IWorldAccessor world, BlockPos pos, IPlayer byPlayer, ref EnumHandling handling)
         {
 
-
+            handling = EnumHandling.PreventDefault;
             base.OnBlockBroken(world, pos, byPlayer, ref handling);
         }
 
@@ -102,10 +102,33 @@ namespace rekindled.src
         }
 
 
-        /*
-         * notes
-         * look at BlockLantern for an example of using PickBlock to generate the itemStack made for OnBlockBroken
-         * and then also remember to prevent default for OnBlockBroken
-         */
+        // attemps to transition the block as an item, whether dropped in the world or in the inventory
+        public Block TryGetBlockTransition(IWorldAccessor world, TransientLightProperties props)
+        {
+            Block toBlock;
+
+            if (block.Attributes == null)
+                return null;
+
+            string fromCode = props.ConvertFrom;
+            string toCode = props.ConvertTo;
+            if (fromCode == null || toCode == null)
+                return null;
+
+
+
+            if (fromCode.IndexOf(":") == -1)
+                fromCode = block.Code.Domain + ":" + fromCode;
+            if (props.ConvertTo.IndexOf(":") == -1)
+                toCode = block.Code.Domain + ":" + toCode;
+
+            AssetLocation blockCode = block.WildCardReplace(
+                new AssetLocation(fromCode),
+                new AssetLocation(toCode)
+            );
+
+            toBlock = world.GetBlock(blockCode);
+            return toBlock;
+        }
     }
 }

@@ -15,16 +15,6 @@ using Vintagestory.API.Util;
 
 namespace rekindled.src
 {
-    class TransientLightProperties 
-    {
-        public float MaxFuel = -1;
-        public float DepletionMul = 1; // modifies how quickly fuel depletes
-
-        public string ConvertTo;
-        public string ConvertFrom;
-    }
-
-
     // A custom version of BlockEntityTransient, specifically for light sources
     class BEBehaviorTransientLight : BlockEntityBehavior
     {
@@ -35,11 +25,7 @@ namespace rekindled.src
         float CurrentDepletionMul = 1;
 
         TransientLightProperties props;
-
         long listenerId; // ensure the GameTickListener is unique
-
-        public string ConvertToOverride; // overrides ConvertTo in TransientLightProperties
-
 
         public BEBehaviorTransientLight(BlockEntity blockentity) : base(blockentity) { }
 
@@ -69,7 +55,7 @@ namespace rekindled.src
             if (CurrentFuel < 0)
             {
                 CurrentFuel = props.MaxFuel;
-                CurrentDepletionMul = props.DepletionMul;
+                CurrentDepletionMul = props.BaseDepletionMul;
                 SetBlockDrops();
             }               
 
@@ -82,6 +68,7 @@ namespace rekindled.src
                 listenerId = Blockentity.RegisterGameTickListener(CheckBETransition, CheckIntervalMs);
             }
         }
+
 
         public void CheckBETransition(float deltaTime)
         {
@@ -104,44 +91,52 @@ namespace rekindled.src
 
                 if (CurrentFuel <= 0)
                 {
-                    TryBETransition(ConvertToOverride ?? props.ConvertTo);
+                    TryBETransition(EnumLightState.BurntOut);
                     break;
                 }
             }
         }
 
-        public void TryBETransition(string toCode)
+
+        // attempts to transition the placed block
+        public void TryBETransition(EnumLightState toLightState)
         {
             Block block = Api.World.BlockAccessor.GetBlock(Blockentity.Pos);
-            Block tblock;
+            Block toBlock;
 
-            if (block.Attributes == null) return;
+            if (block.Attributes == null) 
+                return;
 
-            string fromCode = props.ConvertFrom;
-            if (fromCode == null || toCode == null) return;
+            string fromState = Enum.GetName(typeof(EnumLightState), props.LightState);
+            string toState = Enum.GetName(typeof(EnumLightState), toLightState);
+            if (fromState == null || toState == null) 
+                return;
 
-            if (fromCode.IndexOf(":") == -1) fromCode = block.Code.Domain + ":" + fromCode;
-            if (toCode.IndexOf(":") == -1) toCode = block.Code.Domain + ":" + toCode;
+            string fromCode = block.Code.ToString();
+            string toCode = block.Code.Domain + ":" + toState;
 
-
-            if (fromCode == null || !toCode.Contains("*"))
+            if (!toCode.Contains("*"))
             {
-                tblock = Api.World.GetBlock(new AssetLocation(toCode));
-                if (tblock == null) return;
+                toBlock = Api.World.GetBlock(new AssetLocation(toCode));
+                if (toBlock == null) 
+                    return;
 
-                Api.World.BlockAccessor.SetBlock(tblock.BlockId, Blockentity.Pos);
+                Api.World.BlockAccessor.SetBlock(toBlock.BlockId, Blockentity.Pos);
                 return;
             }
 
-            AssetLocation blockCode = block.WildCardReplace(
-                new AssetLocation(fromCode),
-                new AssetLocation(toCode)
-            );
+            //AssetLocation blockCode = block.WildCardReplace(
+            //    new AssetLocation(fromCode),
+            //    new AssetLocation(toCode)
+            //);
 
-            tblock = Api.World.GetBlock(blockCode);
-            if (tblock == null) return;
+            AssetLocation blockCode = block.CodeWithVariant("lightState", toState);
 
-            Api.World.BlockAccessor.SetBlock(tblock.BlockId, Blockentity.Pos);
+            toBlock = Api.World.GetBlock(blockCode);
+            if (toBlock == null) 
+                return;
+
+            Api.World.BlockAccessor.SetBlock(toBlock.BlockId, Blockentity.Pos);
         }
 
 
