@@ -73,7 +73,22 @@ namespace rekindled.src
 
         void DebugUpdateBlockInHand(IServerPlayer player, int groupId, CmdArgs args)
         {
+            ItemSlot slot = player.InventoryManager.ActiveHotbarSlot;
+            Block block = slot.Itemstack.Block;
+            if (block == null)
+            {
+                sapi.Logger.Warning("DebugUpdateBlockInHand: could not find block in slot: {0}", slot.ToString());
+                return;
+            }
 
+            var behavior = block.GetBehavior<BlockBehaviorTransientLight>();
+            if (behavior == null)
+            {
+                sapi.Logger.Warning("DebugUpdateBlockInHand: could not find BlockBehaviorTransientLight for {0} in slot: {1}", block.Code.ToShortString(), slot.ToString());
+                return;
+            }
+
+            behavior.TryBlockTransition(EnumLightState.burntout, slot);
         }
 
 
