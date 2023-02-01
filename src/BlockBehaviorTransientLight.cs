@@ -18,10 +18,37 @@ namespace rekindled.src
     // this behavior checks if the block has TransientLightProps, and transfers those props to the itemStack dropped when the block is broken
     class BlockBehaviorTransientLight : BlockBehavior
     {
+        ICoreServerAPI sapi;
         float dropQuantityMultiplier = 1;
 
 
         public BlockBehaviorTransientLight(Block block) : base(block) { }
+
+
+        public override void OnLoaded(ICoreAPI api)
+        {
+            base.OnLoaded(api);
+
+            if (api.Side == EnumAppSide.Server)
+                sapi = api as ICoreServerAPI;
+        }
+
+
+        public void TryBlockTransition(EnumLightState toLightState, ItemSlot slot)
+        {
+            string toState = Enum.GetName(typeof(EnumLightState), toLightState);
+            if (toState == null)
+                return;
+
+            AssetLocation blockCode = block.CodeWithVariant("lightState", toState);
+
+            Block toBlock = sapi.World.GetBlock(blockCode);
+            if (toBlock == null)
+                return;
+
+            ItemStack newStack = new ItemStack(toBlock, slot.StackSize);
+            slot.Itemstack = newStack;
+        }
 
 
         public override ItemStack[] GetDrops(IWorldAccessor world, BlockPos pos, IPlayer byPlayer, ref float dropChanceMultiplier, ref EnumHandling handling)
@@ -84,6 +111,46 @@ namespace rekindled.src
 
         public override void OnBlockBroken(IWorldAccessor world, BlockPos pos, IPlayer byPlayer, ref EnumHandling handling)
         {
+            handling = EnumHandling.PreventDefault;
+
+            bool preventDefault = false;
+            foreach (BlockBehavior behavior in block.BlockBehaviors)
+            {
+                EnumHandling handled = EnumHandling.PassThrough;
+
+                behavior.OnBlockBroken(world, pos, byPlayer, ref handled);
+                if (handled == EnumHandling.PreventDefault) preventDefault = true;
+                if (handled == EnumHandling.PreventSubsequent) return;
+            }
+
+            if (preventDefault) return;
+
+            handling = EnumHandling.Handled;
+            if (world.Side == EnumAppSide.Server && (byPlayer == null || byPlayer.WorldData.CurrentGameMode != EnumGameMode.Creative))
+            {
+                ItemStack[] drops = new ItemStack[] { OnPickBlock(world, pos, ref handling) };
+
+                if (drops != null)
+                {
+                    for (int i = 0; i < drops.Length; i++)
+                    {
+                        world.SpawnItemEntity(drops[i], new Vec3d(pos.X + 0.5, pos.Y + 0.5, pos.Z + 0.5), null);
+                    }
+                }
+
+                world.PlaySoundAt(block.Sounds.GetBreakSound(byPlayer), pos.X, pos.Y, pos.Z, byPlayer);
+            }
+
+            if (block.EntityClass != null)
+            {
+                BlockEntity entity = world.BlockAccessor.GetBlockEntity(pos);
+                if (entity != null)
+                {
+                    entity.OnBlockBroken();
+                }
+            }
+
+            world.BlockAccessor.SetBlock(0, pos);
 
             handling = EnumHandling.PreventDefault;
             base.OnBlockBroken(world, pos, byPlayer, ref handling);
@@ -99,36 +166,6 @@ namespace rekindled.src
         public override string GetPlacedBlockInfo(IWorldAccessor world, BlockPos pos, IPlayer forPlayer)
         {
             return base.GetPlacedBlockInfo(world, pos, forPlayer);
-        }
-
-
-        // attemps to transition the block as an item, whether dropped in the world or in the inventory
-        public Block TryGetBlockTransition(IWorldAccessor world, TransientLightProperties props)
-        {
-            Block toBlock;
-
-            if (block.Attributes == null)
-                return null;
-
-            string fromCode = props.ConvertFrom;
-            string toCode = props.ConvertTo;
-            if (fromCode == null || toCode == null)
-                return null;
-
-
-
-            if (fromCode.IndexOf(":") == -1)
-                fromCode = block.Code.Domain + ":" + fromCode;
-            if (props.ConvertTo.IndexOf(":") == -1)
-                toCode = block.Code.Domain + ":" + toCode;
-
-            AssetLocation blockCode = block.WildCardReplace(
-                new AssetLocation(fromCode),
-                new AssetLocation(toCode)
-            );
-
-            toBlock = world.GetBlock(blockCode);
-            return toBlock;
         }
     }
 }

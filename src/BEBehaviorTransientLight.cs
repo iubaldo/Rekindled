@@ -20,11 +20,8 @@ namespace rekindled.src
     {
         public virtual int CheckIntervalMs { get; set; } = 2000; // every 2 seconds
 
-        float TimeLastChecked = 0; // the last time the transition was checked
-        float CurrentFuel = -1;
-        float CurrentDepletionMul = 1;
-
         TransientLightProperties props;
+        TransientLightState state;
         long listenerId; // ensure the GameTickListener is unique
 
         public BEBehaviorTransientLight(BlockEntity blockentity) : base(blockentity) { }
@@ -51,13 +48,7 @@ namespace rekindled.src
             props = Blockentity.Block.Attributes["transientLightProps"].AsObject<TransientLightProperties>();
             if (props == null) 
                 return;
-
-            if (CurrentFuel < 0)
-            {
-                CurrentFuel = props.MaxFuel;
-                CurrentDepletionMul = props.BaseDepletionMul;
-                SetBlockDrops();
-            }               
+            state = new TransientLightState(props);              
 
             if (api.Side == EnumAppSide.Server)
             {
@@ -81,17 +72,17 @@ namespace rekindled.src
             }
 
             // In case this block was imported from another older world. In that case lastCheckAtTotalDays would be a future date.
-            TimeLastChecked = (float) Math.Min(TimeLastChecked, Api.World.Calendar.TotalDays);
+            state.TimeLastChecked = (float) Math.Min(state.TimeLastChecked, Api.World.Calendar.TotalDays);
 
             float oneHour = 1f / Api.World.Calendar.HoursPerDay;
-            while (Api.World.Calendar.TotalDays - TimeLastChecked > oneHour) // only attempt to transition every in-game hour
+            while (Api.World.Calendar.TotalDays - state.TimeLastChecked > oneHour) // only attempt to transition every in-game hour
             {
-                TimeLastChecked += oneHour;
-                CurrentFuel -= 1f;
+                state.TimeLastChecked += oneHour;
+                state.CurrentFuel -= 1f;
 
-                if (CurrentFuel <= 0)
+                if (state.CurrentFuel <= 0)
                 {
-                    TryBETransition(EnumLightState.BurntOut);
+                    TryBETransition(EnumLightState.burntout);
                     break;
                 }
             }
@@ -104,31 +95,13 @@ namespace rekindled.src
             Block block = Api.World.BlockAccessor.GetBlock(Blockentity.Pos);
             Block toBlock;
 
+            // sanity check
             if (block.Attributes == null) 
                 return;
 
-            string fromState = Enum.GetName(typeof(EnumLightState), props.LightState);
             string toState = Enum.GetName(typeof(EnumLightState), toLightState);
-            if (fromState == null || toState == null) 
+            if (toState == null) 
                 return;
-
-            string fromCode = block.Code.ToString();
-            string toCode = block.Code.Domain + ":" + toState;
-
-            if (!toCode.Contains("*"))
-            {
-                toBlock = Api.World.GetBlock(new AssetLocation(toCode));
-                if (toBlock == null) 
-                    return;
-
-                Api.World.BlockAccessor.SetBlock(toBlock.BlockId, Blockentity.Pos);
-                return;
-            }
-
-            //AssetLocation blockCode = block.WildCardReplace(
-            //    new AssetLocation(fromCode),
-            //    new AssetLocation(toCode)
-            //);
 
             AssetLocation blockCode = block.CodeWithVariant("lightState", toState);
 
@@ -145,9 +118,9 @@ namespace rekindled.src
         {
             base.FromTreeAttributes(tree, worldAccessForResolve);
 
-            TimeLastChecked = tree.GetFloat("timeLastChecked");
-            CurrentFuel = tree.GetFloat("currentFuel");
-            CurrentDepletionMul = tree.GetFloat("currentDepletionMul");
+            state.TimeLastChecked = tree.GetFloat("TimeLastChecked");
+            state.CurrentFuel = tree.GetFloat("CurrentFuel");
+            state.CurrentDepletionMul = tree.GetFloat("CurrentDepletionMul");
         }
 
 
@@ -156,16 +129,16 @@ namespace rekindled.src
         {
             base.ToTreeAttributes(tree);
 
-            tree.SetFloat("timeLastChecked", TimeLastChecked);
-            tree.SetFloat("currentFuel", CurrentFuel);
-            tree.SetFloat("currentDepletionMul", CurrentDepletionMul);
+            tree.SetFloat("TimeLastChecked", state.TimeLastChecked);
+            tree.SetFloat("CurrentFuel", state.CurrentFuel);
+            tree.SetFloat("CurrentDepletionMul", state.CurrentDepletionMul);
         }
 
 
         // transfer attributes from itemStack.Block.Attributes
         public override void OnBlockPlaced()
         {
-           // need a way to access fromStack
+           // need a way to access fromStack (will be fixed in 1.18)
         }
 
 
@@ -182,8 +155,8 @@ namespace rekindled.src
             Block block = Blockentity.Block;
 
             foreach (BlockDropItemStack blockDrop in block.Drops) {
-                blockDrop.ResolvedItemstack.Attributes.SetFloat("currentFuel", CurrentFuel);
-                blockDrop.ResolvedItemstack.Attributes.SetFloat("currentDepletionMul", CurrentDepletionMul);
+                blockDrop.ResolvedItemstack.Attributes.SetFloat("state.CurrentFuel", state.CurrentFuel);
+                blockDrop.ResolvedItemstack.Attributes.SetFloat("state.CurrentDepletionMul", state.CurrentDepletionMul);
             }
         }
     }

@@ -15,16 +15,27 @@ namespace rekindled.src
     }
 
 
+    // immutable properties read from JSON
     public class TransientLightProperties
+    {        
+        public readonly float MaxFuel;      
+        public readonly float BaseDepletionMul; // modifies how quickly fuel depletes        
+    }
+
+    
+    // mutable state for this specific instance, read from and written to treeattributes
+    public class TransientLightState 
     {
         public EnumLightState LightState;
+        public float TimeLastChecked = 0;
+        public float CurrentFuel = -1;
+        public float CurrentDepletionMul = 1;
 
-        public float TimeLastChecked;
-
-        public readonly float MaxFuel;
-        public float CurrentFuel;
-
-        public readonly float BaseDepletionMul; // modifies how quickly fuel depletes
-        public float CurrentDepletionMul;
+        public TransientLightState(TransientLightProperties props)
+        {
+            CurrentFuel = props.MaxFuel;
+            CurrentDepletionMul = props.BaseDepletionMul;
+        }
     }
+
 }

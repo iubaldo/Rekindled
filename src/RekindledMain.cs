@@ -50,7 +50,36 @@ namespace rekindled.src
 
             base.StartServerSide(sapi);
 
-            sapi.Event.RegisterGameTickListener(UpdateLightSources, 2000);
+            // sapi.Event.RegisterGameTickListener(UpdateLightSources, 2000);
+            sapi.RegisterCommand("transitionBE", "Attempt to transition the block you're currently looking at.", "", DebugUpdateBlockEntity);
+            sapi.RegisterCommand("transitionHand", "Attempt to transition the block currently in hand.", "", DebugUpdateBlockInHand);
+            sapi.RegisterCommand("transitionAround", "Attempt to transition entityItems in a radius around you.", "", DebugUpdateBlocksAround);
+        }
+
+
+        void DebugUpdateBlockEntity(IServerPlayer player, int groupId, CmdArgs args)
+        {
+            BlockEntity entity = sapi.World.BlockAccessor.GetBlockEntity(player.CurrentBlockSelection.Position);
+            if (entity.Block.Attributes?["transientLightProps"].Exists == false)
+            {
+                sapi.Logger.Warning("DebugUpdateBlockEntity: @{0}, could not find transientLightProps for @{1}", entity.Pos, entity.Block.Code.ToShortString());
+                return;
+            }
+
+            entity.GetBehavior<BEBehaviorTransientLight>().TryBETransition(EnumLightState.unlit);
+            sapi.Logger.Warning("DebugUpdateBlockEntity: @{0}, perfomed transition for @{1}", entity.Pos, entity.Block.Code.ToShortString());
+        }
+
+
+        void DebugUpdateBlockInHand(IServerPlayer player, int groupId, CmdArgs args)
+        {
+
+        }
+
+
+        void DebugUpdateBlocksAround(IServerPlayer player, int groupId, CmdArgs args)
+        {
+
         }
 
 
@@ -76,12 +105,10 @@ namespace rekindled.src
         }
 
 
-        void TryTransitionLightSource(ItemStack stack, TransientLightProperties props)
+        void TryTransitionEntityItem(ItemSlot slot, TransientLightProperties props)
         {
-            var behavior = stack.Block.GetBehavior(typeof(BlockBehaviorTransientLight)) as BlockBehaviorTransientLight;
-            Block toBlock = behavior.TryGetBlockTransition(sapi.World, props);
-            if (toBlock != null)
-                stack.Block = toBlock;
+            var behavior = slot.Itemstack.Block.GetBehavior(typeof(BlockBehaviorTransientLight)) as BlockBehaviorTransientLight;
+            behavior.TryBlockTransition(EnumLightState.burntout, slot);
         }
 
 
