@@ -89,11 +89,24 @@ namespace rekindled.src
             }
 
             behavior.TryBlockTransition(EnumLightState.burntout, slot);
+            sapi.Logger.Warning("DebugUpdateBlockInHand: performed transition for {0} in slot: {1}", block.Code.ToShortString(), slot.ToString());
+
         }
 
 
         void DebugUpdateBlocksAround(IServerPlayer player, int groupId, CmdArgs args)
         {
+            bool foundTarget = false;
+            foreach (Entity entity in sapi.World.GetEntitiesAround(player.Entity.SidedPos.XYZ, 32, 32, (Entity entity) => { return IsEntityTransientLight(entity); }))
+            {
+                var entityItem = entity as EntityItem;
+                TryTransitionEntityItem(entityItem.Slot);
+                sapi.Logger.Warning("DebugUpdateBlocksAround: @{0}, performed transition for {1}", entityItem.Itemstack.Block.Code.ToShortString());
+                foundTarget = true;
+            }
+
+            if (!foundTarget)
+                sapi.Logger.Warning("DebugUpdateBlocksAround: could not find valid targets");
 
         }
 
@@ -107,20 +120,14 @@ namespace rekindled.src
 
                 foreach (Entity entity in sapi.World.GetEntitiesAround(player.Entity.SidedPos.XYZ, 32, 32, (Entity entity) => { return IsEntityTransientLight(entity); }))
                 {
-                    if (entity is EntityItem)
-                    {
-                        var entityItem = entity as EntityItem;
-                        if (entityItem.Itemstack.Class == EnumItemClass.Block && entityItem.Itemstack.Block.Attributes?["transientLightProps"].Exists == true)
-                        {
-                            // transition
-                        }
-                    }
+                    var entityItem = entity as EntityItem;
+                    TryTransitionEntityItem(entityItem.Slot);
                 }
             }
         }
 
 
-        void TryTransitionEntityItem(ItemSlot slot, TransientLightProperties props)
+        void TryTransitionEntityItem(ItemSlot slot)
         {
             var behavior = slot.Itemstack.Block.GetBehavior(typeof(BlockBehaviorTransientLight)) as BlockBehaviorTransientLight;
             behavior.TryBlockTransition(EnumLightState.burntout, slot);
