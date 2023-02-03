@@ -11,15 +11,15 @@ namespace rekindled.src
         lit,            // Light source is currently consuming fuel, unstackable
         unlit,          // "Fresh" light source that hasn't yet been lit/used, stackable
         extinguished,   // "Used" light source, isn't currently consuming fuel, unstackable
-        burntout       // No fuel remaining, stackable
+        burnedout       // No fuel remaining, stackable
     }
 
 
     // immutable properties read from JSON
     public class TransientLightProperties
     {        
-        public readonly float MaxFuel;      
-        public readonly float BaseDepletionMul; // modifies how quickly fuel depletes        
+        public float MaxFuelHours;      
+        public float BaseDepletionMul; // modifies how quickly fuel depletes        
     }
 
     
@@ -28,12 +28,12 @@ namespace rekindled.src
     {
         public EnumLightState LightState;
         public float TimeLastChecked = 0;
-        public float CurrentFuel = -1;
+        public float CurrentFuelHours = -1;
         public float CurrentDepletionMul = 1;
 
         public TransientLightState(TransientLightProperties props)
         {
-            CurrentFuel = props.MaxFuel;
+            CurrentFuelHours = props.MaxFuelHours;
             CurrentDepletionMul = props.BaseDepletionMul;
         }
     }

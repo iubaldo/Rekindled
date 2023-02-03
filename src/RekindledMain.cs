@@ -32,12 +32,13 @@ namespace rekindled.src
     class RekindledMain : ModSystem
     {
         ICoreServerAPI sapi;
+        ICoreClientAPI capi;
 
         public override void Start(ICoreAPI api)
         {
             base.Start(api);
 
-            System.Diagnostics.Debug.WriteLine("LOADING REKINDLED MAIN");
+            System.Diagnostics.Debug.WriteLine("Loading Rekindled...");
 
             api.RegisterBlockBehaviorClass("blockbehaviortransientlight", typeof(BlockBehaviorTransientLight));
             api.RegisterBlockEntityBehaviorClass("bebehaviortransientlight", typeof(BEBehaviorTransientLight));
@@ -57,17 +58,26 @@ namespace rekindled.src
         }
 
 
+        public override void StartClientSide(ICoreClientAPI api)
+        {
+            capi = api;
+
+            base.StartClientSide(api);
+        }
+
+
         void DebugUpdateBlockEntity(IServerPlayer player, int groupId, CmdArgs args)
         {
             BlockEntity entity = sapi.World.BlockAccessor.GetBlockEntity(player.CurrentBlockSelection.Position);
-            if (entity.Block.Attributes?["transientLightProps"].Exists == false)
+
+            if (entity.Block.Attributes == null || entity.Block.Attributes["transientLightProps"].Exists == false)
             {
-                sapi.Logger.Warning("DebugUpdateBlockEntity: @{0}, could not find transientLightProps for @{1}", entity.Pos, entity.Block.Code.ToShortString());
+                capi.Logger.Warning("DebugUpdateBlockEntity: @{0}, could not find transientLightProps for @{1}", entity.Pos, entity.Block.Code.ToShortString());
                 return;
             }
 
             entity.GetBehavior<BEBehaviorTransientLight>().TryBETransition(EnumLightState.unlit);
-            sapi.Logger.Warning("DebugUpdateBlockEntity: @{0}, perfomed transition for @{1}", entity.Pos, entity.Block.Code.ToShortString());
+            capi.Logger.Warning("DebugUpdateBlockEntity: @{0}, perfomed transition for @{1}", entity.Pos, entity.Block.Code.ToShortString());
         }
 
 
@@ -77,19 +87,19 @@ namespace rekindled.src
             Block block = slot.Itemstack.Block;
             if (block == null)
             {
-                sapi.Logger.Warning("DebugUpdateBlockInHand: could not find block in slot: {0}", slot.ToString());
+                capi.Logger.Warning("DebugUpdateBlockInHand: could not find block in slot: {0}", slot.ToString());
                 return;
             }
 
             var behavior = block.GetBehavior<BlockBehaviorTransientLight>();
             if (behavior == null)
             {
-                sapi.Logger.Warning("DebugUpdateBlockInHand: could not find BlockBehaviorTransientLight for {0} in slot: {1}", block.Code.ToShortString(), slot.ToString());
+                capi.Logger.Warning("DebugUpdateBlockInHand: could not find BlockBehaviorTransientLight for {0} in slot: {1}", block.Code.ToShortString(), slot.ToString());
                 return;
             }
 
-            behavior.TryBlockTransition(EnumLightState.burntout, slot);
-            sapi.Logger.Warning("DebugUpdateBlockInHand: performed transition for {0} in slot: {1}", block.Code.ToShortString(), slot.ToString());
+            behavior.TryBlockTransition(EnumLightState.burnedout, slot);
+            capi.Logger.Warning("DebugUpdateBlockInHand: performed transition for {0} in slot: {1}", block.Code.ToShortString(), slot.ToString());
 
         }
 
@@ -101,13 +111,12 @@ namespace rekindled.src
             {
                 var entityItem = entity as EntityItem;
                 TryTransitionEntityItem(entityItem.Slot);
-                sapi.Logger.Warning("DebugUpdateBlocksAround: @{0}, performed transition for {1}", entityItem.Itemstack.Block.Code.ToShortString());
+                capi.Logger.Warning("DebugUpdateBlocksAround: @{0}, performed transition for {1}", entityItem.Itemstack.Block.Code.ToShortString());
                 foundTarget = true;
             }
 
             if (!foundTarget)
-                sapi.Logger.Warning("DebugUpdateBlocksAround: could not find valid targets");
-
+                capi.Logger.Warning("DebugUpdateBlocksAround: could not find valid targets");
         }
 
 
@@ -130,7 +139,7 @@ namespace rekindled.src
         void TryTransitionEntityItem(ItemSlot slot)
         {
             var behavior = slot.Itemstack.Block.GetBehavior(typeof(BlockBehaviorTransientLight)) as BlockBehaviorTransientLight;
-            behavior.TryBlockTransition(EnumLightState.burntout, slot);
+            behavior.TryBlockTransition(EnumLightState.burnedout, slot);
         }
 
 

@@ -1,10 +1,10 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="Current" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|AnyCPU'">
-    <StartArguments>-openWorld="modsamplestest" -pcreativebuilding --addModPath="C:\Users\heatb\Desktop\game dev\vintage story modding\vsmodtemplate-1.5.7\mods</StartArguments>
+    <StartArguments>-openWorld="modsamplestest" -pcreativebuilding --addModPath="C:\Users\Lan\Desktop\game dev\vintage story modding\vsmodtemplate-1.5.7\mods</StartArguments>
     <StartAction>Program</StartAction>
-    <StartProgram>D:\Games\Vintagestory\Vintagestory.exe</StartProgram>
-    <StartWorkingDirectory>D:\Games\Vintagestory\</StartWorkingDirectory>
+    <StartProgram>C:\Games\Vintagestory\Vintagestory.exe</StartProgram>
+    <StartWorkingDirectory>C:\Games\Vintagestory\</StartWorkingDirectory>
   </PropertyGroup>
   <PropertyGroup>
     <ProjectView>ShowAllFiles</ProjectView>
