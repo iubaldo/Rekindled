@@ -27,6 +27,9 @@ namespace rekindled.src
      *  remove "state" from torch and replace with lightState
      * 
      * patch-reenable unused torches and recipes
+     * 
+     * see if it's possible to combine and average fuel time for extinguished light sources
+     *  similar to how decay works on food
      */
 
     class RekindledMain : ModSystem
@@ -68,55 +71,68 @@ namespace rekindled.src
 
         void DebugUpdateBlockEntity(IServerPlayer player, int groupId, CmdArgs args)
         {
+            System.Diagnostics.Debug.WriteLine("DebugUpdateBlockEntity: attempting transition on block entity...");
+
             BlockEntity entity = sapi.World.BlockAccessor.GetBlockEntity(player.CurrentBlockSelection.Position);
 
             if (entity.Block.Attributes == null || entity.Block.Attributes["transientLightProps"].Exists == false)
             {
-                capi.Logger.Warning("DebugUpdateBlockEntity: @{0}, could not find transientLightProps for @{1}", entity.Pos, entity.Block.Code.ToShortString());
+                System.Diagnostics.Debug.WriteLine("DebugUpdateBlockEntity: @{0}, could not find transientLightProps for @{1}", entity.Pos, entity.Block.Code.ToShortString());
                 return;
             }
 
-            entity.GetBehavior<BEBehaviorTransientLight>().TryBETransition(EnumLightState.unlit);
-            capi.Logger.Warning("DebugUpdateBlockEntity: @{0}, perfomed transition for @{1}", entity.Pos, entity.Block.Code.ToShortString());
+            var behavior = entity.GetBehavior<BEBehaviorTransientLight>();
+            if (behavior == null)
+            {
+                System.Diagnostics.Debug.WriteLine("DebugUpdateBlockEntity: @{0}, could not find bebehaviortransientlight for @{1}", entity.Pos, entity.Block.Code.ToShortString());
+                return;
+            }
+
+            behavior.TryBETransition(EnumLightState.unlit);
+            System.Diagnostics.Debug.WriteLine("DebugUpdateBlockEntity: @{0}, perfomed transition for @{1}", entity.Pos, entity.Block.Code.ToShortString());
         }
 
 
         void DebugUpdateBlockInHand(IServerPlayer player, int groupId, CmdArgs args)
         {
+            System.Diagnostics.Debug.WriteLine("DebugUpdateBlockEntity: attempting transition on hand...");
+
             ItemSlot slot = player.InventoryManager.ActiveHotbarSlot;
             Block block = slot.Itemstack.Block;
             if (block == null)
             {
-                capi.Logger.Warning("DebugUpdateBlockInHand: could not find block in slot: {0}", slot.ToString());
+                System.Diagnostics.Debug.WriteLine("DebugUpdateBlockInHand: could not find block in slot: {0}", slot.ToString());
                 return;
             }
 
             var behavior = block.GetBehavior<BlockBehaviorTransientLight>();
             if (behavior == null)
             {
-                capi.Logger.Warning("DebugUpdateBlockInHand: could not find BlockBehaviorTransientLight for {0} in slot: {1}", block.Code.ToShortString(), slot.ToString());
+                System.Diagnostics.Debug.WriteLine("DebugUpdateBlockInHand: could not find BlockBehaviorTransientLight for {0} in slot: {1}", block.Code.ToShortString(), slot.ToString());
                 return;
             }
 
             behavior.TryBlockTransition(EnumLightState.burnedout, slot);
-            capi.Logger.Warning("DebugUpdateBlockInHand: performed transition for {0} in slot: {1}", block.Code.ToShortString(), slot.ToString());
+            System.Diagnostics.Debug.WriteLine("DebugUpdateBlockInHand: performed transition for {0} in slot: {1}", block.Code.ToShortString(), slot.ToString());
 
         }
 
 
         void DebugUpdateBlocksAround(IServerPlayer player, int groupId, CmdArgs args)
         {
+            System.Diagnostics.Debug.WriteLine("DebugUpdateBlockEntity: attempting transition around...");
+
             bool foundTarget = false;
             foreach (Entity entity in sapi.World.GetEntitiesAround(player.Entity.SidedPos.XYZ, 32, 32, (Entity entity) => { return IsEntityTransientLight(entity); }))
             {
                 var entityItem = entity as EntityItem;
                 TryTransitionEntityItem(entityItem.Slot);
-                capi.Logger.Warning("DebugUpdateBlocksAround: @{0}, performed transition for {1}", entityItem.Itemstack.Block.Code.ToShortString());
+                System.Diagnostics.Debug.WriteLine("DebugUpdateBlocksAround: @{0}, performed transition for {1}", entityItem.Itemstack.Block.Code.ToShortString());
                 foundTarget = true;
             }
 
             if (!foundTarget)
-                capi.Logger.Warning("DebugUpdateBlocksAround: could not find valid targets");
+                System.Diagnostics.Debug.WriteLine("DebugUpdateBlocksAround: could not find valid targets");
         }
 
 
@@ -130,7 +146,10 @@ namespace rekindled.src
                 foreach (Entity entity in sapi.World.GetEntitiesAround(player.Entity.SidedPos.XYZ, 32, 32, (Entity entity) => { return IsEntityTransientLight(entity); }))
                 {
                     var entityItem = entity as EntityItem;
-                    TryTransitionEntityItem(entityItem.Slot);
+                    // tick fuelhours
+                    // save to itemstack attributes
+                    // check if transition
+                    // TryTransitionEntityItem(entityItem.Slot);
                 }
             }
         }

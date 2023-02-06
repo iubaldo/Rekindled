@@ -20,8 +20,24 @@ namespace rekindled.src
     {
         ICoreServerAPI sapi;
 
+        // blockbehaviors are non-stateful, so just used to temporarily store data
+        TransientLightProperties props; 
+        TransientLightState state;
 
-        public BlockBehaviorTransientLight(Block block) : base(block) { }
+
+        public BlockBehaviorTransientLight(Block block) : base(block) 
+        {
+            if (block.Attributes == null)
+                return;
+            if (block.Attributes["transientLightProps"].Exists != true)
+                return;
+
+            props = block.Attributes["transientLightProps"].AsObject<TransientLightProperties>();
+            if (props == null)
+                return;
+
+            state = new TransientLightState(props);
+        }
 
 
         public override void OnLoaded(ICoreAPI api)
@@ -87,23 +103,19 @@ namespace rekindled.src
 
         public override ItemStack OnPickBlock(IWorldAccessor world, BlockPos pos, ref EnumHandling handling)
         {
+            handling = EnumHandling.PassThrough; // if state doesn't exist, just passthrough
+            if (state == null)
+                base.OnPickBlock(world, pos, ref handling);
+
             ItemStack stack = new ItemStack(block);
-            BlockEntity be = world.BlockAccessor.GetBlockEntity(pos);
 
-            handling = EnumHandling.PassThrough; // if behavior doesn't exist, just passthrough
-            foreach (BlockEntityBehavior behavior in be.Behaviors)
-            {
-                if (behavior is BEBehaviorTransientLight)
-                {
-                    stack.Attributes.SetFloat("timeLastChecked", behavior.properties["timeLastChecked"].AsFloat());
-                    stack.Attributes.SetFloat("currentFuel", behavior.properties["currentFuel"].AsFloat());
-                    stack.Attributes.SetFloat("currentDepletionMul", behavior.properties["currentFuel"].AsFloat());
+            stack.Attributes.SetFloat("timeLastChecked", state.TimeLastChecked);
+            stack.Attributes.SetFloat("currentFuelHours", state.CurrentFuelHours);
+            stack.Attributes.SetFloat("currentDepletionMul", state.CurrentDepletionMul);
 
-                    handling = EnumHandling.PreventDefault; 
-                }                        
-            }
-                      
-            base.OnPickBlock(world, pos, ref handling); // will only prevent default if attributes successfully set
+            handling = EnumHandling.PreventDefault; 
+                    
+            base.OnPickBlock(world, pos, ref handling);
             return stack;
         }
 
@@ -158,15 +170,17 @@ namespace rekindled.src
 
         public override string GetHeldBlockInfo(IWorldAccessor world, ItemSlot inSlot)
         {
-
-
-            return base.GetHeldBlockInfo(world, inSlot);
+            if (state == null)
+                return base.GetHeldBlockInfo(world, inSlot);
+            return "\nState: " + block.Variant["state"] + "\nFuel Hours Remaining: " + state.CurrentFuelHours + "\nCurrent Depletion Multiplier: x" + state.CurrentDepletionMul;
         }
 
 
         public override string GetPlacedBlockInfo(IWorldAccessor world, BlockPos pos, IPlayer forPlayer)
         {
-            return base.GetPlacedBlockInfo(world, pos, forPlayer);
+            if (state == null)
+                return base.GetPlacedBlockInfo(world, pos, forPlayer);
+            return "\nState: " + block.Variant["state"] + "\nFuel Hours Remaining: " + state.CurrentFuelHours + "\nCurrent Depletion Multiplier: x" + state.CurrentDepletionMul;
         }
     }
 }

@@ -1,19 +1,27 @@
 [
 	{ 
+	"file": "game:blocktypes/wood/torch",
+	"op": "replace",
+	"path": "/variantgroups",
+	"value": [
+			{ "code": "type", "states": ["crude", "basic", "cloth"] },
+			{ "code": "state", "states": ["lit", "unlit", "extinct", "burnedout"] },
+			{ "code": "orientation", "states": ["up"], "loadFromProperties": "abstract/horizontalorientation" }
+		]
+	},
+	{ 
 		"file": "game:blocktypes/wood/torch",
 		"op": "add",
-		"path": "/behaviorsbyType",
+		"path": "/behaviorsbyType/",
 		"value": {
-			"base": "blockbehaviortransientlight"
+			"*": [{ "name": "blockbehaviortransientlight"}]
 		}
 	},
 	{
 		"file": "game:blocktypes/wood/torch",
 		"op": "add",
 		"path": "/entityBehaviors",
-		"value": [
-			{ "name": "bebehaviortransientlight" }
-		]
+		"value": [{ "name": "bebehaviortransientlight" }]
 	},
 	{
 		"file": "game:blocktypes/wood/torch",
@@ -21,21 +29,18 @@
 		"path": "/attributes/transientLightPropsbyType",
 		"value": {
 			"*-crude-lit-*": {
-				"maxFuelHours": "48",
+				"maxFuelHours": "1200",
+				"baseDepletionMul": "1"
+			},
+			"*-basic-lit-*": {
+				"maxFuelHours": "1200",
+				"baseDepletionMul": "1"
+			},
+			"*-cloth-lit-*": {
+				"maxFuelHours": "1200",
 				"baseDepletionMul": "1"
 			}
 		}
-	},
-	{ "_comment": "if cock die" },
-	{ 
-		"file": "game:blocktypes/wood/torch",
-		"op": "replace",
-		"path": "/variantgroups",
-		"value": [
-			{ "code": "type", "states": ["crude", "basic", "cloth"] },
-			{ "code": "state", "states": ["lit", "unlit", "extinct", "burnedout"] },
-			{ "code": "orientation", "states": ["up"], "loadFromProperties": "abstract/horizontalorientation" }
-		]
 	},
 	{ 
 		"file": "game:blocktypes/wood/torch",
@@ -67,8 +72,13 @@
 		"value":{
 			"*-lit-*": 1,
 			"*-unlit-*": 32,
-			"*-extinguished-*": 1,
+			"*-extinct-*": 1,
 			"*-burnedout-*": 32
 		}
+	},
+	{ 
+		"file": "game:blocktypes/wood/torch",
+		"op": "remove",
+		"path": "/allowedVariants"
 	}
 ]

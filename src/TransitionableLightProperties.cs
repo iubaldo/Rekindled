@@ -20,6 +20,12 @@ namespace rekindled.src
     {        
         public float MaxFuelHours;      
         public float BaseDepletionMul; // modifies how quickly fuel depletes        
+
+        public string ToString()
+        {
+            return "MaxFuelHours: " + MaxFuelHours +
+                   "\nBaseDepletionMul: " + BaseDepletionMul;
+        }
     }
 
     
@@ -35,6 +41,14 @@ namespace rekindled.src
         {
             CurrentFuelHours = props.MaxFuelHours;
             CurrentDepletionMul = props.BaseDepletionMul;
+        }
+
+        public string ToString()
+        {
+            return "EnumLightState: " + Enum.GetName(typeof(EnumLightState), LightState) +
+                   "\nTimeLastChecked: " + TimeLastChecked +
+                   "\nCurrentFuelHours: " + CurrentFuelHours +
+                   "\nCurrentDepletionMul: " + CurrentDepletionMul;
         }
     }
 
