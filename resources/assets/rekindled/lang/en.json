@@ -1,0 +1,37 @@
+{
+	"game:block-torch-crude-lit-*": "Crude Torch (Lit)",
+	"game:blockdesc-torch-crude-Lit-*": "A crudely made torch that burns for up to 30 real-time minutes.",
+	"game:block-torch-crude-unlit-*": "Crude Torch (Unlit)",
+	"game:blockdesc-torch-crude-unlit-*": "A freshly (and crudely) made torch that burns for up to 30 real-time minutes.",
+	"game:block-torch-crude-extinct-*": "Crude Torch (Extinguished)",
+	"game:blockdesc-torch-crude-extinct-*": "A crudely made, extinguished torch that burns for up to 30 real-time minutes.",
+	"game:block-torch-crude-burnedout-*": "Crude Torch (Burned Out)",
+	"game:blockdesc-torch-crude-burnedout-*": "A crudely made, burned out torch that will no longer light. The tip can be recycled for charcoal.",
+
+	"game:block-torch-basic-lit-*": "Basic Torch (Lit)",
+	"game:blockdesc-torch-basic-lit-*": "A simple torch that burns for up to 2 real-time hours.",
+	"game:block-torch-basic-unlit-*": "Basic Torch (Unlit)",
+	"game:blockdesc-torch-basic-unlit-*": "A freshly made, simple torch that burns for up to 2 real-time hours.",
+	"game:block-torch-basic-extinct-*": "Basic Torch (Extinguished)",
+	"game:blockdesc-torch-basic-extinct-*": "A simple, extinguished torch that burns for up to 2 real-time hours.",
+	"game:block-torch-basic-burnedout-*": "Basic Torch (Burned Out)",
+	"game:blockdesc-torch-basic-burnedout-*": "A simple, burned out torch that will no longer light. The tip can be recycled for charcoal.",
+
+	"game:block-torch-basic-lit-up": "Basic Torch (Lit)",
+	"game:blockdesc-torch-basic-lit-up": "A simple torch that burns for up to 2 real-time hours.",
+	"game:block-torch-basic-unlit-up": "Basic Torch (Unlit)",
+	"game:blockdesc-torch-basic-unlit-up": "A freshly made, simple torch that burns for up to 2 real-time hours.",
+	"game:block-torch-basic-extinct-up": "Basic Torch (Extinguished)",
+	"game:blockdesc-torch-basic-extinct-up": "A simple, extinguished torch that burns for up to 2 real-time hours.",
+	"game:block-torch-basic-burnedout-up": "Basic Torch (Burned Out)",
+	"game:blockdesc-torch-basic-burnedout-up": "A simple, burned out torch that will no longer light. The tip can be recycled for charcoal.",
+
+	"game:block-torch-cloth-lit-*": "Cloth Torch (Lit)",
+	"game:blockdesc-torch-cloth-lit-*": "A long-lasting torch that burns for up to 4 real-time hours.",
+	"game:block-torch-cloth-unlit-*": "Cloth Torch (Unlit)",
+	"game:blockdesc-torch-cloth-unlit-*": "A freshly made, long-lasting torch that burns for up to 4 real-time hours.",
+	"game:block-torch-cloth-extinct-*": "Cloth Torch (Extinguished)",
+	"game:blockdesc-torch-cloth-extinct-*": "A long-lasting, extinguished torch that burns for up to 4 real-time hours.",
+	"game:block-torch-cloth-burnedout-*": "Cloth Torch (Burned Out)",
+	"game:blockdesc-torch-cloth-burnedout-*": "A long-lasting, burned out torch that will no longer light. The tip can be recycled for charcoal."
+}

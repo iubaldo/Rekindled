@@ -1,0 +1,67 @@
+[
+	{ 
+		"file": "game:blocktypes/wood/torch.json",
+		"op": "replace",
+		"path": "/variantgroups/1",
+		"value": 
+			{ "code": "state", "states": ["lit", "unlit", "extinct", "burnedout"] }
+	},
+	{
+		"file": "game:blocktypes/wood/torch.json",
+		"op": "remove",
+		"path": "/attributes/transientPropsbyType"
+	},
+	{ 
+		"file": "game:blocktypes/wood/torch.json",
+		"op": "replace",
+		"path": "/shapebytype",
+		"value": {
+			"*-unlit-up": { "base": "block/wood/torch/{type}-extinct-ground" },
+			"*-unlit-north": { "base": "block/wood/torch/{type}-extinct-wall", "rotateY": 0 },
+			"*-unlit-east": { "base": "block/wood/torch/{type}-extinct-wall", "rotateY": 270 },
+			"*-unlit-south": { "base": "block/wood/torch/{type}-extinct-wall", "rotateY": 180 },
+			"*-unlit-west": { "base": "block/wood/torch/{type}-extinct-wall", "rotateY": 90 },
+			
+			"*-up": { "base": "block/wood/torch/{type}-{state}-ground" },
+			"*-north": { "base": "block/wood/torch/{type}-{state}-wall", "rotateY": 0 },
+			"*-east": { "base": "block/wood/torch/{type}-{state}-wall", "rotateY": 270 },
+			"*-south": { "base": "block/wood/torch/{type}-{state}-wall", "rotateY": 180 },
+			"*-west": { "base": "block/wood/torch/{type}-{state}-wall", "rotateY": 90 }
+		}
+	},
+	{
+		"file": "game:blocktypes/wood/torch.json",
+		"op": "add",
+		"path": "/maxstacksizeByType",
+		"value": {
+			"*-lit-*": 1,
+			"*-unlit-*": 32,
+			"*-extinct-*": 1,
+			"*-burnedout-*": 32
+		}
+	},
+	{
+		"file": "game:blocktypes/wood/torch.json",
+		"op": "remove",
+		"path": "/allowedVariants"
+	},
+	{
+		"file": "game:blocktypes/wood/torch.json",
+		"op": "add",
+		"path": "/attributes/transientLightPropsbyType",
+		"value": {
+			"*-crude-*": {
+				"maxFuelHours": 24,
+				"baseDepletionMul": 1
+			},
+			"*-basic-*": {
+				"maxFuelHours": 72,
+				"baseDepletionMul": 1
+			},
+			"*-cloth-*": {
+				"maxFuelHours": 168,
+				"baseDepletionMul": 1
+			}
+		}
+	}
+]

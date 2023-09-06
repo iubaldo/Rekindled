@@ -1,0 +1,13 @@
+{
+    "type": "code",
+    "modid": "rekindled",
+    "name": "Rekindled",
+    "authors": [
+        "Landar"
+    ],
+    "description": "Overhauls light sources via depletable fuel and new methods of firestarting",
+    "version": "1.0.0",
+    "dependencies": {
+        "game": "1.18.8"
+    }
+}
