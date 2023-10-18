@@ -71,13 +71,16 @@ namespace Rekindled.src
                 attr.SetDouble(ATTR_CURRENT_FUEL_HOURS, state.CurrentFuelHours + hoursPassedAdjusted);
             }
 
-            double fuelHoursLeft = Math.Max(0, props.MaxFuelHours - state.CurrentFuelHours);
-
-            if (fuelHoursLeft <= 0 && world.Side == EnumAppSide.Server) // currently causing a stackoverflow, stop the infinite loop
+            if (state.CurrentFuelHours <= 0 && world.Side == EnumAppSide.Server) // currently causing a stackoverflow, stop the infinite loop
             {
                 ItemStack newStack = behavior.OnTransitionStack(inslot, EnumLightState.Burnedout);
 
                 itemStack.SetFrom(newStack);
+
+                // not sure if reset is necessary, but just to be safe
+                behavior = inslot.Itemstack.Block.GetBehavior(typeof(BlockBehaviorTransientLight), false) as BlockBehaviorTransientLight;
+                props = behavior.Props;
+                state = behavior.State;
 
                 inslot.MarkDirty();
             }
