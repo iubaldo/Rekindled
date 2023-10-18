@@ -3,13 +3,14 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Vintagestory.API.Common;
 
 namespace Rekindled.src
 {
     public class TransientLightProps
     {
-        public float MaxFuelHours;
-        public float BaseDepletionMul = 1;  // modifies how quickly fuel depletes
+        public double MaxFuelHours;
+        public double BaseDepletionMul = 1;  // modifies how quickly fuel depletes
 
 
         public override string ToString()
@@ -23,10 +24,11 @@ namespace Rekindled.src
     public class TransientLightState
     {
         TransientLightProps Props;
+
         public EnumLightState LightState;
-        public float TimeLastChecked = 0;
-        public float CurrentFuelHours;
-        public float CurrentDepletionMul;
+        public double LastUpdatedTotalHours = 0;
+        public double CurrentFuelHours;
+        public double CurrentDepletionMul;
 
 
         public TransientLightState(TransientLightProps props)

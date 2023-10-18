@@ -5,15 +5,16 @@ using System.Text;
 using System.Threading.Tasks;
 
 using Vintagestory.API.Common;
+using Vintagestory.API.Datastructures;
 using Vintagestory.API.MathTools;
 using Vintagestory.API.Server;
 
 namespace Rekindled.src
 {
-    class BlockBehaviorTransientLight : BlockBehavior, ITransientTickable
-    {
-        ICoreServerAPI sapi;
+    // TODO: make this inherit from a generic transient light class to allow for item transient lights as well
 
+    class BlockBehaviorTransientLight : BlockBehavior
+    {
         // blockbehaviors are non-stateful, so just used to temporarily store data
         public TransientLightProps Props;
         public TransientLightState State;
@@ -22,7 +23,7 @@ namespace Rekindled.src
         {
             if (block.Attributes == null)
                 return;
-            if (block.Attributes["transientLightProps"].Exists != true)
+            if (!block.Attributes["transientLightProps"].Exists)
                 return;
 
             Props = block.Attributes["transientLightProps"].AsObject<TransientLightProps>();
@@ -34,17 +35,6 @@ namespace Rekindled.src
             if (!Enum.TryParse(block.Variant["state"], true, out EnumLightState lightState))
                 return;
             State.LightState = lightState;
-
-            RekindledMain.LightSources.Add((ITransientTickable) this);
-        }
-
-
-        public override void OnLoaded(ICoreAPI api)
-        {
-            base.OnLoaded(api);
-
-            if (api.Side == EnumAppSide.Server)
-                sapi = api as ICoreServerAPI;
         }
 
 
@@ -52,13 +42,35 @@ namespace Rekindled.src
         {
             AssetLocation blockCode = block.CodeWithVariant("state", Enum.GetName(toLightState).ToLower());
 
-            Block toBlock = sapi.World.GetBlock(blockCode);
+            Block toBlock = RekindledMain.sapi.World.GetBlock(blockCode);
             if (toBlock == null)
                 return;
 
             ItemStack newStack = new(toBlock, slot.StackSize);
             slot.Itemstack = newStack;
             slot.MarkDirty();
+        }
+
+
+        // transitions the transient light stack to the given toState
+        // TODO: make sure props/state update correctly to match the new block
+        public ItemStack OnTransitionStack(ItemSlot slot, EnumLightState toLightState)
+        {
+            if (!slot.Itemstack.Collectible.HasBehavior(typeof(BlockBehaviorTransientLight)))
+                return null;
+
+            string toState = Enum.GetName(typeof(EnumLightState), toLightState).ToLower();
+
+            AssetLocation blockCode = block.CodeWithVariant("state", toState);
+
+            Block toBlock = RekindledMain.sapi.World.GetBlock(blockCode);
+            if (toBlock == null)
+                return null;
+
+            ItemStack newStack = 
+                new ItemStack(block.Id, block.ItemClass, slot.Itemstack.StackSize, slot.Itemstack.Attributes as TreeAttribute, RekindledMain.sapi.World);
+
+            return newStack;
         }
 
 
@@ -112,16 +124,6 @@ namespace Rekindled.src
                 return base.GetPlacedBlockInfo(world, pos, forPlayer);
             return base.GetPlacedBlockInfo(world, pos, forPlayer) + 
                 "\nState: " + block.Variant["state"] + "\nFuel Hours Remaining: " + State.CurrentFuelHours + "\nCurrent Depletion Multiplier: x" + State.CurrentDepletionMul;
-        }
-
-
-        public void OnGameTick(float deltaTime)
-        {
-            if (State == null)
-                return;
-
-            State.CurrentFuelHours -= (float)(sapi.World.Calendar.ElapsedHours - State.TimeLastChecked);
-            State.TimeLastChecked = (float)sapi.World.Calendar.ElapsedHours;
         }
     }
 }

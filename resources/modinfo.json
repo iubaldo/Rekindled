@@ -8,6 +8,6 @@
     "description": "Overhauls light sources via depletable fuel and new methods of firestarting",
     "version": "1.0.0",
     "dependencies": {
-        "game": "1.18.8"
+        "game": "1.18.15"
     }
 }

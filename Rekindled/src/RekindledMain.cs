@@ -46,11 +46,12 @@ namespace Rekindled.src
 
     class RekindledMain : ModSystem
     {
-        ICoreServerAPI sapi;
-        ICoreClientAPI capi;
-        static public List<ITransientTickable> LightSources; // list of all light sources that should be ticked for fuel consumption/transitioning
+        const string PATCH_CODE = "Landar.Rekindled.RekindledMain";
 
-        public Harmony harmony;
+        internal static ICoreServerAPI sapi;
+        ICoreClientAPI capi;
+
+        public static Harmony harmony = new Harmony(PATCH_CODE);
 
 
         public override void Start(ICoreAPI api)
@@ -59,11 +60,23 @@ namespace Rekindled.src
 
             System.Diagnostics.Debug.WriteLine("Loading Rekindled...");
 
+            // register behaviors
             api.RegisterBlockBehaviorClass("blockbehaviortransientlight", typeof(BlockBehaviorTransientLight));
             api.RegisterBlockEntityBehaviorClass("bebehaviortransientlight", typeof(BEBehaviorTransientLight));
 
-            harmony = new("rekindled");
-            // harmony.PatchAll();
+            // apply harmony patches
+            harmony.PatchAll();
+
+            if (!harmony.GetPatchedMethods().Any())
+                Mod.Logger.Notification("No Harmony Patches were applied.");
+            else
+            {
+                StringBuilder builder = new StringBuilder("Harmony Patched Methods: ");
+                foreach (var val in harmony.GetPatchedMethods())
+                    builder.Append(val.Name + ", ");
+
+                Mod.Logger.Notification(builder.ToString());
+            }
         }
 
 
@@ -74,7 +87,6 @@ namespace Rekindled.src
             sapi = api;
 
             RegisterCommands();
-            sapi.Event.RegisterGameTickListener(UpdateLightSources, 2000);
         }
 
 
@@ -101,10 +113,7 @@ namespace Rekindled.src
         {
             foreach (Block block in api.World.Blocks)
             {
-                if (block.Code == null || block.Id == 0)
-                    continue;
-
-                if (IsBlockTransientLight(block))
+                if (block.Code != null && IsBlockTransientLight(block))
                 {
                     block.BlockBehaviors = block.BlockBehaviors.Append(new BlockBehaviorTransientLight(block));
 
@@ -117,8 +126,7 @@ namespace Rekindled.src
                 }
             }
 
-
-            //foreach (Item item in api.World.Items)
+            //foreach (Item item in api.World.Items) // TODO: apply behaviors to item transient lights
             //{
             //    if (item.Code == null)
             //        continue;
@@ -151,27 +159,33 @@ namespace Rekindled.src
                 .GetOrCreate("rekindled")
                 .IgnoreAdditionalArgs()
                 .RequiresPrivilege("worldedit")
-                .WithDescription("Rekindled Mod Debug Commands")
+                .WithDescription("Rekindled Mod debug commands")
 
                 .BeginSubCommand("transitionBE")
-                    .WithDescription("Attempt to transition the block you're currently looking at")
+                    .WithDescription("Attempt to transition the block you're currently looking at.")
                     .HandleWith(OnCmdUpdateBlockEntity)
                 .EndSubCommand()
 
                 .BeginSubCommand("transitionHand")
-                    .WithDescription("Attempt to transition the block in your main hand")
+                    .WithDescription("Attempt to transition the block in your main hand, if any.")
                     .HandleWith(OnCmdUpdateBlockInHand)
                 .EndSubCommand()
 
                 .BeginSubCommand("transitionAround")
-                    .WithDescription("Attempt to transition entityItems in a radius around you")
+                    .WithDescription("Attempt to transition entityItems in a radius around you.")
                     .HandleWith(OnCmdUpdateBlocksAround)
                 .EndSubCommand()
 
-                .BeginSubCommand("display")
-                    .WithDescription("displays props of transientlight object in hand, if any")
+                .BeginSubCommand("displayProps")
+                    .WithDescription("displays props of transientlight object in hand, if any.")
                     .HandleWith(OnCmdShowProps)
                 .EndSubCommand()
+
+                .BeginSubCommand("displayTreeAttr")
+                    .WithDescription("display ITreeAttributes of transientlight object in hand, if any.")
+                    .HandleWith(OnCmdShowTreeAttr)
+                .EndSubCommand()
+
                 ;
         }
 
@@ -209,20 +223,13 @@ namespace Rekindled.src
             if (block == null)
                 return TextCommandResult.Error("DebugUpdateBlockInHand: could not find block in slot: " + slot.ToString());
 
-            System.Diagnostics.Debug.WriteLine("DebugUpdateBlockEntity: all block behaviors on hand: ");
-            foreach (BlockBehavior b in block.BlockBehaviors)
-                System.Diagnostics.Debug.WriteLine(b.ToString());
-
-            var behavior = block.GetBehavior<BlockBehaviorTransientLight>();
+            var behavior = block.GetBehavior(typeof(BlockBehaviorTransientLight), false) as BlockBehaviorTransientLight;
             if (behavior == null)
-                return TextCommandResult.Error("DebugUpdateBlockInHand: could not find BlockBehaviorTransientLight for " + block.Code.ToShortString() + " in slot: " + slot.ToString());
+                return TextCommandResult.Error("DebugUpdateBlockInHand: could not find BlockBehaviorTransientLight for " + block.Code);
 
             behavior.TryBlockTransition(EnumLightState.Burnedout, slot);
 
-            string message = "DebugUpdateBlockInHand: performed transition for " + block.Code.ToShortString() + " in slot: " + slot.ToString();
-            sapi.SendMessage(args.Caller.Player, args.Caller.FromChatGroupId, message, EnumChatType.Notification);
-
-            return TextCommandResult.Success();
+            return TextCommandResult.Success("DebugUpdateBlockInHand: performed transition for " + block.Code);
         }
 
 
@@ -277,10 +284,21 @@ namespace Rekindled.src
         }
 
 
-        void UpdateLightSources(float deltaTime)
+        TextCommandResult OnCmdShowTreeAttr(TextCommandCallingArgs args)
         {
-            foreach (var source in LightSources)
-                source.OnGameTick(deltaTime);
+            ItemSlot slot = args.Caller.Player.InventoryManager.ActiveHotbarSlot;
+            Block block = slot.Itemstack.Block;
+            if (block == null)
+                return TextCommandResult.Error("Error, could not find block in hand");
+
+            var behavior = block.GetBehavior(typeof(BlockBehaviorTransientLight), false) as BlockBehaviorTransientLight;
+            if (behavior == null)
+                return TextCommandResult.Error("Error, could not find BlockBehaviorTransientLight for " + block.Code.Path);
+
+            //if (!slot.Itemstack.Attributes.HasAttribute("transientState"))
+            //    return TextCommandResult.Error("Error, could not find attribute \"transientState\" for " + block.Code.Path);
+
+            return TextCommandResult.Success(block.Code.Path + ":\n" + slot.Itemstack.Attributes.ToJsonToken());
         }
 
 
@@ -296,6 +314,15 @@ namespace Rekindled.src
             var entityItem = entity as EntityItem;
             TransientLightProps props = entityItem.Itemstack.Block.Attributes["transientLightProps"].AsObject<TransientLightProps>();
             return props != null;
+        }
+
+
+        public override void Dispose()
+        {
+            base.Dispose();
+
+            if (harmony != null)
+                harmony.UnpatchAll();
         }
     }
 }

@@ -16,7 +16,7 @@ using Vintagestory.API.Util;
 namespace Rekindled.src
 {
     // this class allows placed transient lights to tick their fuel count
-    class BEBehaviorTransientLight : BlockEntityBehavior, ITransientTickable
+    class BEBehaviorTransientLight : BlockEntityBehavior
     {
         public int checkIntervalMs = 2000; // every 2 seconds
 
@@ -71,12 +71,12 @@ namespace Rekindled.src
             }
 
             // In case this block was imported from another older world. In that case lastCheckAtTotalDays would be a future date.
-            State.TimeLastChecked = (float)Math.Min(State.TimeLastChecked, Api.World.Calendar.TotalDays);
+            State.LastUpdatedTotalHours = (float)Math.Min(State.LastUpdatedTotalHours, Api.World.Calendar.TotalDays);
 
             float oneHour = 1f / Api.World.Calendar.HoursPerDay;
-            while (Api.World.Calendar.TotalDays - State.TimeLastChecked > oneHour) // if from an older world, simulate for difference in time
+            while (Api.World.Calendar.TotalDays - State.LastUpdatedTotalHours > oneHour) // if from an older world, simulate for difference in time
             {
-                State.TimeLastChecked += oneHour;
+                State.LastUpdatedTotalHours += oneHour;
                 State.CurrentFuelHours -= 1f;
 
                 if (State.CurrentFuelHours <= 0)
@@ -123,7 +123,7 @@ namespace Rekindled.src
             if (State == null)
                 return;
 
-            State.TimeLastChecked = tree.GetFloat("TimeLastChecked");
+            State.LastUpdatedTotalHours = tree.GetFloat("TimeLastChecked");
             State.CurrentFuelHours = tree.GetFloat("CurrentFuelHours");
             State.CurrentDepletionMul = tree.GetFloat("CurrentDepletionMul");
         }
@@ -137,9 +137,9 @@ namespace Rekindled.src
             if (State == null)
                 return;
 
-            tree.SetFloat("TimeLastChecked", State.TimeLastChecked);
-            tree.SetFloat("CurrentFuelHours", State.CurrentFuelHours);
-            tree.SetFloat("CurrentDepletionMul", State.CurrentDepletionMul);
+            tree.SetDouble("TimeLastChecked", State.LastUpdatedTotalHours);
+            tree.SetDouble("CurrentFuelHours", State.CurrentFuelHours);
+            tree.SetDouble("CurrentDepletionMul", State.CurrentDepletionMul);
         }
 
 
@@ -164,18 +164,9 @@ namespace Rekindled.src
 
             foreach (BlockDropItemStack blockDrop in block.Drops)
             {
-                blockDrop.ResolvedItemstack.Attributes.SetFloat("state.CurrentFuel", State.CurrentFuelHours);
-                blockDrop.ResolvedItemstack.Attributes.SetFloat("state.CurrentDepletionMul", State.CurrentDepletionMul);
+                blockDrop.ResolvedItemstack.Attributes.SetDouble("state.CurrentFuel", State.CurrentFuelHours);
+                blockDrop.ResolvedItemstack.Attributes.SetDouble("state.CurrentDepletionMul", State.CurrentDepletionMul);
             }
-        }
-
-
-        public void OnGameTick(float deltaTime)
-        {
-            if (State == null) 
-                return;
-
-
         }
     }
 }
