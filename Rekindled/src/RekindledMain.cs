@@ -183,17 +183,17 @@ namespace Rekindled.src
                     .HandleWith(OnCmdShowProps)
                 .EndSubCommand()
 
-                .BeginSubCommand("displayAttr")
+                .BeginSubCommand("getAttr")
                     .WithDescription("display ITreeAttributes of transientlight object in hand, if any.")
-                    .HandleWith(OnCmdDisplayAttr)
+                    .HandleWith(OnCmdGetAttr)
                 .EndSubCommand()
 
-                .BeginSubCommand("adjustAttr")
+                .BeginSubCommand("setAttr")
                     .WithArgs(parsers.WordRange("attribute", 
                                                 "createdTotalHours", "lastUpdatedTotalHours", "currentLightState", "currentFuelHours", "currentDepletionMul"),
                               parsers.Double("value"))
                     .WithDescription("adjust the transientState attributes of a transientlight object in hand")
-                    .HandleWith(OnCmdAdjustAttr)
+                    .HandleWith(OnCmdSetAttr)
                 .EndSubCommand()
                 ;
         }
@@ -291,7 +291,7 @@ namespace Rekindled.src
         }
 
 
-        TextCommandResult OnCmdDisplayAttr(TextCommandCallingArgs args)
+        TextCommandResult OnCmdGetAttr(TextCommandCallingArgs args)
         {
             ItemSlot slot = args.Caller.Player.InventoryManager.ActiveHotbarSlot;
             
@@ -304,7 +304,7 @@ namespace Rekindled.src
         }
 
 
-        TextCommandResult OnCmdAdjustAttr(TextCommandCallingArgs args)
+        TextCommandResult OnCmdSetAttr(TextCommandCallingArgs args)
         {
             ItemSlot slot = args.Caller.Player.InventoryManager.ActiveHotbarSlot;
 
