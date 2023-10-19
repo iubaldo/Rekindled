@@ -155,6 +155,8 @@ namespace Rekindled.src
 
         void RegisterCommands()
         {
+            CommandArgumentParsers parsers = sapi.ChatCommands.Parsers;
+
             sapi.ChatCommands
                 .GetOrCreate("rekindled")
                 .IgnoreAdditionalArgs()
@@ -181,11 +183,18 @@ namespace Rekindled.src
                     .HandleWith(OnCmdShowProps)
                 .EndSubCommand()
 
-                .BeginSubCommand("displayTreeAttr")
+                .BeginSubCommand("displayAttr")
                     .WithDescription("display ITreeAttributes of transientlight object in hand, if any.")
-                    .HandleWith(OnCmdShowTreeAttr)
+                    .HandleWith(OnCmdDisplayAttr)
                 .EndSubCommand()
 
+                .BeginSubCommand("adjustAttr")
+                    .WithArgs(parsers.WordRange("attribute", 
+                                                "createdTotalHours", "lastUpdatedTotalHours", "currentLightState", "currentFuelHours", "currentDepletionMul"),
+                              parsers.Double("value"))
+                    .WithDescription("adjust the transientState attributes of a transientlight object in hand")
+                    .HandleWith(OnCmdAdjustAttr)
+                .EndSubCommand()
                 ;
         }
 
@@ -216,16 +225,13 @@ namespace Rekindled.src
 
         TextCommandResult OnCmdUpdateBlockInHand(TextCommandCallingArgs args)
         {
-            sapi.SendMessage(args.Caller.Player, args.Caller.FromChatGroupId, "DebugUpdateBlockEntity: attempting transition on hand...", EnumChatType.Notification);
-
             ItemSlot slot = args.Caller.Player.InventoryManager.ActiveHotbarSlot;
-            Block block = slot.Itemstack.Block;
-            if (block == null)
-                return TextCommandResult.Error("DebugUpdateBlockInHand: could not find block in slot: " + slot.ToString());
 
+            if (!IsSlotTransientLight(slot))
+                return TextCommandResult.Error("Error, current slot does not contain a transientLight.");
+
+            Block block = slot.Itemstack.Block;
             var behavior = block.GetBehavior(typeof(BlockBehaviorTransientLight), false) as BlockBehaviorTransientLight;
-            if (behavior == null)
-                return TextCommandResult.Error("DebugUpdateBlockInHand: could not find BlockBehaviorTransientLight for " + block.Code);
 
             behavior.TryBlockTransition(EnumLightState.Burnedout, slot);
 
@@ -259,17 +265,18 @@ namespace Rekindled.src
         TextCommandResult OnCmdShowProps(TextCommandCallingArgs args)
         {
             ItemSlot slot = args.Caller.Player.InventoryManager.ActiveHotbarSlot;
+
+            if (!IsSlotTransientLight(slot))
+                return TextCommandResult.Error("Error, current slot does not contain a transientLight.");
+
             Block block = slot.Itemstack.Block;
-            if (block == null)
-                return TextCommandResult.Error("Error, could not find block in hand");
+            var behavior = block.GetBehavior(typeof(BlockBehaviorTransientLight), false) as BlockBehaviorTransientLight;
 
             //sapi.SendMessage(args.Caller.Player, args.Caller.FromChatGroupId, "All block behaviors in hand: ", EnumChatType.Notification);
             //foreach (BlockBehavior b in block.BlockBehaviors)
             //    sapi.SendMessage(args.Caller.Player, args.Caller.FromChatGroupId, b.GetType().Name, EnumChatType.Notification);
 
-            var behavior = block.GetBehavior(typeof(BlockBehaviorTransientLight), false) as BlockBehaviorTransientLight;
-            if (behavior == null)
-                return TextCommandResult.Error("Error, could not find BlockBehaviorTransientLight for " + block.Code.Path);
+
 
             var state = behavior.State;
             if (state == null)
@@ -284,21 +291,46 @@ namespace Rekindled.src
         }
 
 
-        TextCommandResult OnCmdShowTreeAttr(TextCommandCallingArgs args)
+        TextCommandResult OnCmdDisplayAttr(TextCommandCallingArgs args)
         {
             ItemSlot slot = args.Caller.Player.InventoryManager.ActiveHotbarSlot;
+            
+            if (!IsSlotTransientLight(slot))
+                return TextCommandResult.Error("Error, current slot does not contain a transientLight.");
+
             Block block = slot.Itemstack.Block;
-            if (block == null)
-                return TextCommandResult.Error("Error, could not find block in hand");
-
-            var behavior = block.GetBehavior(typeof(BlockBehaviorTransientLight), false) as BlockBehaviorTransientLight;
-            if (behavior == null)
-                return TextCommandResult.Error("Error, could not find BlockBehaviorTransientLight for " + block.Code.Path);
-
-            //if (!slot.Itemstack.Attributes.HasAttribute("transientState"))
-            //    return TextCommandResult.Error("Error, could not find attribute \"transientState\" for " + block.Code.Path);
 
             return TextCommandResult.Success(block.Code.Path + ":\n" + slot.Itemstack.Attributes.ToJsonToken());
+        }
+
+
+        TextCommandResult OnCmdAdjustAttr(TextCommandCallingArgs args)
+        {
+            ItemSlot slot = args.Caller.Player.InventoryManager.ActiveHotbarSlot;
+
+            if (!IsSlotTransientLight(slot))
+                return TextCommandResult.Error("Error, current slot does not contain a transientLight.");
+
+            ITreeAttribute attr = (ITreeAttribute)slot.Itemstack.Attributes["transientState"];
+
+            double value = (double)args[1];
+            string attributeName = (string)args[0];
+            switch (attributeName)
+            {
+                case "createdTotalHours":
+                    attr.SetDouble(attributeName, value); break;
+                case "lastUpdatedTotalHours":
+                    attr.SetDouble(attributeName, value); break;
+                case "currentLightState":
+                    attr.SetInt(attributeName, (int)value); break;
+                case "currentFuelHours":
+                    attr.SetDouble(attributeName, value); break;
+                case "currentDepletionMul":
+                    attr.SetDouble(attributeName, value); break;
+            }
+            slot.MarkDirty();
+
+            return TextCommandResult.Success();
         }
 
 
@@ -314,6 +346,20 @@ namespace Rekindled.src
             var entityItem = entity as EntityItem;
             TransientLightProps props = entityItem.Itemstack.Block.Attributes["transientLightProps"].AsObject<TransientLightProps>();
             return props != null;
+        }
+
+
+        bool IsSlotTransientLight(ItemSlot slot)
+        {
+            Block block = slot.Itemstack.Block;
+            if (block == null)
+                return false;
+
+            var behavior = block.GetBehavior(typeof(BlockBehaviorTransientLight), false) as BlockBehaviorTransientLight;
+            if (behavior == null)
+                return false;
+
+            return true;
         }
 
 

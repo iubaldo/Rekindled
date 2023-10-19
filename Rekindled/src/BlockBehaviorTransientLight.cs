@@ -111,10 +111,13 @@ namespace Rekindled.src
 
         public override string GetHeldBlockInfo(IWorldAccessor world, ItemSlot inSlot)
         {
-            if (State == null)
+            if (State == null || !inSlot.Itemstack.Attributes.HasAttribute("transientState"))
                 return base.GetHeldBlockInfo(world, inSlot);
-            return base.GetHeldBlockInfo(world, inSlot) + 
-                "\nState: " + block.Variant["state"] + "\nFuel Hours Remaining: " + State.CurrentFuelHours + "\nCurrent Depletion Multiplier: x" + State.CurrentDepletionMul;
+
+            ITreeAttribute attr = (ITreeAttribute)inSlot.Itemstack.Attributes["transientState"];
+            return "\nState: " + ((EnumLightState)attr.GetInt("currentLightState")).GetName() + 
+                    "\nFuel Hours Remaining: " + Math.Round(attr.GetDouble("currentFuelHours"), 2) + 
+                    "\nCurrent Depletion Multiplier: x" + Math.Round(attr.GetDouble("currentDepletionMul"), 2);
         }
 
 

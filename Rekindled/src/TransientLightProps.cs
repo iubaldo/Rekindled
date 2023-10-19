@@ -26,7 +26,6 @@ namespace Rekindled.src
         TransientLightProps Props;
 
         public EnumLightState LightState;
-        public double LastUpdatedTotalHours = 0;
         public double CurrentFuelHours;
         public double CurrentDepletionMul;
 

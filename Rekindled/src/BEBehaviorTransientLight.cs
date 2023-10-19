@@ -54,38 +54,38 @@ namespace Rekindled.src
                 if (listenerId != 0)
                     throw new InvalidOperationException("Initializing BEBehaviorTransientLight twice would create a memory and performance leak");
                 
-                listenerId = Blockentity.RegisterGameTickListener(CheckBETransition, checkIntervalMs);
+                // listenerId = Blockentity.RegisterGameTickListener(CheckBETransition, checkIntervalMs);
             }
 
             Api.World.Logger.Error("BEBehaviorTransientLight @{0}: initializing props for {1}... ", Blockentity.Pos, this.Blockentity.Block.Code.ToShortString());
         }
 
 
-        public void CheckBETransition(float deltaTime)
-        {
-            if (Blockentity.Block.Attributes == null)
-            {
-                Api.World.Logger.Error("BEBehaviorTransientLight @{0}: cannot find block attributes for {1}. Will stop transient timer", Blockentity.Pos, Blockentity.Block.Code.ToShortString());
-                Blockentity.UnregisterGameTickListener(listenerId);
-                return;
-            }
+        //public void CheckBETransition(float deltaTime)
+        //{
+        //    if (Blockentity.Block.Attributes == null)
+        //    {
+        //        Api.World.Logger.Error("BEBehaviorTransientLight @{0}: cannot find block attributes for {1}. Will stop transient timer", Blockentity.Pos, Blockentity.Block.Code.ToShortString());
+        //        Blockentity.UnregisterGameTickListener(listenerId);
+        //        return;
+        //    }
 
-            // In case this block was imported from another older world. In that case lastCheckAtTotalDays would be a future date.
-            State.LastUpdatedTotalHours = (float)Math.Min(State.LastUpdatedTotalHours, Api.World.Calendar.TotalDays);
+        //    // In case this block was imported from another older world. In that case lastCheckAtTotalDays would be a future date.
+        //    State.LastUpdatedTotalHours = (float)Math.Min(State.LastUpdatedTotalHours, Api.World.Calendar.TotalDays);
 
-            float oneHour = 1f / Api.World.Calendar.HoursPerDay;
-            while (Api.World.Calendar.TotalDays - State.LastUpdatedTotalHours > oneHour) // if from an older world, simulate for difference in time
-            {
-                State.LastUpdatedTotalHours += oneHour;
-                State.CurrentFuelHours -= 1f;
+        //    float oneHour = 1f / Api.World.Calendar.HoursPerDay;
+        //    while (Api.World.Calendar.TotalDays - State.LastUpdatedTotalHours > oneHour) // if from an older world, simulate for difference in time
+        //    {
+        //        State.LastUpdatedTotalHours += oneHour;
+        //        State.CurrentFuelHours -= 1f;
 
-                if (State.CurrentFuelHours <= 0)
-                {
-                    TryBETransition(EnumLightState.Burnedout);
-                    break;
-                }
-            }
-        }
+        //        if (State.CurrentFuelHours <= 0)
+        //        {
+        //            TryBETransition(EnumLightState.Burnedout);
+        //            break;
+        //        }
+        //    }
+        //}
 
 
         // attempts to transition the placed block
@@ -123,7 +123,6 @@ namespace Rekindled.src
             if (State == null)
                 return;
 
-            State.LastUpdatedTotalHours = tree.GetFloat("TimeLastChecked");
             State.CurrentFuelHours = tree.GetFloat("CurrentFuelHours");
             State.CurrentDepletionMul = tree.GetFloat("CurrentDepletionMul");
         }
@@ -137,7 +136,6 @@ namespace Rekindled.src
             if (State == null)
                 return;
 
-            tree.SetDouble("TimeLastChecked", State.LastUpdatedTotalHours);
             tree.SetDouble("CurrentFuelHours", State.CurrentFuelHours);
             tree.SetDouble("CurrentDepletionMul", State.CurrentDepletionMul);
         }

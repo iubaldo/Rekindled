@@ -13,4 +13,10 @@ namespace Rekindled.src
         Extinct,
         Burnedout
     }
+
+
+    public static class LightStateUtil
+    {
+        public static string GetName(this EnumLightState state) => Enum.GetName(typeof(EnumLightState), state);
+    }
 }

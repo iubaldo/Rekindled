@@ -63,33 +63,35 @@ namespace Rekindled.src
                 attr[ATTR_CURRENT_DEPLETION_MUL] = new DoubleAttribute(props.BaseDepletionMul);
             }
 
-            double hoursPassed = currentTotalHours - state.LastUpdatedTotalHours;
+            double hoursPassed = currentTotalHours - attr.GetDouble(ATTR_LAST_UPDATED_TOTAL_HOURS);
 
-            if (hoursPassed > 0.05f)
+            if (state.LightState == EnumLightState.Lit)
             {
-                double hoursPassedAdjusted = hoursPassed * state.CurrentDepletionMul;
-                attr.SetDouble(ATTR_CURRENT_FUEL_HOURS, state.CurrentFuelHours + hoursPassedAdjusted);
+                if (hoursPassed > 0.05f)
+                {
+                    double hoursPassedAdjusted = hoursPassed * state.CurrentDepletionMul;
+                    attr.SetDouble(ATTR_CURRENT_FUEL_HOURS, state.CurrentFuelHours - hoursPassedAdjusted);
+                }
+
+                if (state.CurrentFuelHours <= 0 && world.Side == EnumAppSide.Server) // currently causing a stackoverflow, stop the infinite loop
+                {
+                    ItemStack newStack = behavior.OnTransitionStack(inslot, EnumLightState.Burnedout);
+
+                    itemStack.SetFrom(newStack);
+
+                    // not sure if reset is necessary, but just to be safe
+                    behavior = inslot.Itemstack.Block.GetBehavior(typeof(BlockBehaviorTransientLight), false) as BlockBehaviorTransientLight;
+                    props = behavior.Props;
+                    state = behavior.State;
+
+                    inslot.MarkDirty();
+                }
+
+                if (hoursPassed > 0.05f)
+                    attr.SetDouble(ATTR_LAST_UPDATED_TOTAL_HOURS, currentTotalHours);
             }
-
-            if (state.CurrentFuelHours <= 0 && world.Side == EnumAppSide.Server) // currently causing a stackoverflow, stop the infinite loop
-            {
-                ItemStack newStack = behavior.OnTransitionStack(inslot, EnumLightState.Burnedout);
-
-                itemStack.SetFrom(newStack);
-
-                // not sure if reset is necessary, but just to be safe
-                behavior = inslot.Itemstack.Block.GetBehavior(typeof(BlockBehaviorTransientLight), false) as BlockBehaviorTransientLight;
-                props = behavior.Props;
-                state = behavior.State;
-
-                inslot.MarkDirty();
-            }
-
-            if (hoursPassed > 0.05f)
-                attr.SetDouble(ATTR_LAST_UPDATED_TOTAL_HOURS, currentTotalHours);
 
             state.LightState = (EnumLightState)attr.GetInt(ATTR_CURRENT_LIGHT_STATE);
-            state.LastUpdatedTotalHours = attr.GetDouble(ATTR_LAST_UPDATED_TOTAL_HOURS);
             state.CurrentFuelHours = attr.GetDouble(ATTR_CURRENT_FUEL_HOURS);
             state.CurrentDepletionMul = attr.GetDouble(ATTR_CURRENT_DEPLETION_MUL);
         }
