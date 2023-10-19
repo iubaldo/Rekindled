@@ -122,7 +122,7 @@ namespace Rekindled.src
                         Name = "bebehaviortransientlight",
                         properties = null
                     };
-                    block.BlockEntityBehaviors = block.BlockEntityBehaviors.Append(bebehavior);
+                    // block.BlockEntityBehaviors = block.BlockEntityBehaviors.Append(bebehavior);
                 }
             }
 
@@ -176,11 +176,6 @@ namespace Rekindled.src
                 .BeginSubCommand("transitionAround")
                     .WithDescription("Attempt to transition entityItems in a radius around you.")
                     .HandleWith(OnCmdUpdateBlocksAround)
-                .EndSubCommand()
-
-                .BeginSubCommand("displayProps")
-                    .WithDescription("displays props of transientlight object in hand, if any.")
-                    .HandleWith(OnCmdShowProps)
                 .EndSubCommand()
 
                 .BeginSubCommand("getAttr")
@@ -259,35 +254,6 @@ namespace Rekindled.src
                 return TextCommandResult.Error("DebugUpdateBlocksAround: could not find valid targets");
 
             return TextCommandResult.Success();
-        }
-
-
-        TextCommandResult OnCmdShowProps(TextCommandCallingArgs args)
-        {
-            ItemSlot slot = args.Caller.Player.InventoryManager.ActiveHotbarSlot;
-
-            if (!IsSlotTransientLight(slot))
-                return TextCommandResult.Error("Error, current slot does not contain a transientLight.");
-
-            Block block = slot.Itemstack.Block;
-            var behavior = block.GetBehavior(typeof(BlockBehaviorTransientLight), false) as BlockBehaviorTransientLight;
-
-            //sapi.SendMessage(args.Caller.Player, args.Caller.FromChatGroupId, "All block behaviors in hand: ", EnumChatType.Notification);
-            //foreach (BlockBehavior b in block.BlockBehaviors)
-            //    sapi.SendMessage(args.Caller.Player, args.Caller.FromChatGroupId, b.GetType().Name, EnumChatType.Notification);
-
-
-
-            var state = behavior.State;
-            if (state == null)
-            {
-                sapi.SendMessage(args.Caller.Player, args.Caller.FromChatGroupId, "Error, State is null for " + block.Code.Path, EnumChatType.Notification);
-                sapi.SendMessage(args.Caller.Player, args.Caller.FromChatGroupId, "Listing block attributes: " + block.Code.Path, EnumChatType.Notification);
-
-                return TextCommandResult.Error(block.Attributes.ToString());
-            }
-
-            return TextCommandResult.Success(block.Code.Path + ":\n" + state.ToString());
         }
 
 

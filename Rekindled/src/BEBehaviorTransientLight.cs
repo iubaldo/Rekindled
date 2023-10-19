@@ -21,8 +21,7 @@ namespace Rekindled.src
         public int checkIntervalMs = 2000; // every 2 seconds
 
         TransientLightProps Props;
-        TransientLightState State;
-        long listenerId; // ensure the GameTickListener is unique
+        // long listenerId; // ensure the GameTickListener is unique
 
         public BEBehaviorTransientLight(BlockEntity blockEntity) : base(blockEntity) { }
 
@@ -47,15 +46,14 @@ namespace Rekindled.src
             }
 
             Props = behavior.Props;
-            State = behavior.State;
 
-            if (api.Side == EnumAppSide.Server)
-            {
-                if (listenerId != 0)
-                    throw new InvalidOperationException("Initializing BEBehaviorTransientLight twice would create a memory and performance leak");
+            //if (api.Side == EnumAppSide.Server)
+            //{
+            //    if (listenerId != 0)
+            //        throw new InvalidOperationException("Initializing BEBehaviorTransientLight twice would create a memory and performance leak");
                 
-                // listenerId = Blockentity.RegisterGameTickListener(CheckBETransition, checkIntervalMs);
-            }
+            //    // listenerId = Blockentity.RegisterGameTickListener(CheckBETransition, checkIntervalMs);
+            //}
 
             Api.World.Logger.Error("BEBehaviorTransientLight @{0}: initializing props for {1}... ", Blockentity.Pos, this.Blockentity.Block.Code.ToShortString());
         }
@@ -115,30 +113,30 @@ namespace Rekindled.src
         }
 
 
-        // load attributes from tree
-        public override void FromTreeAttributes(ITreeAttribute tree, IWorldAccessor worldAccessForResolve)
-        {
-            base.FromTreeAttributes(tree, worldAccessForResolve);
+        //// load attributes from tree
+        //public override void FromTreeAttributes(ITreeAttribute tree, IWorldAccessor worldAccessForResolve)
+        //{
+        //    base.FromTreeAttributes(tree, worldAccessForResolve);
 
-            if (State == null)
-                return;
+        //    if (State == null)
+        //        return;
 
-            State.CurrentFuelHours = tree.GetFloat("CurrentFuelHours");
-            State.CurrentDepletionMul = tree.GetFloat("CurrentDepletionMul");
-        }
+        //    State.CurrentFuelHours = tree.GetFloat("CurrentFuelHours");
+        //    State.CurrentDepletionMul = tree.GetFloat("CurrentDepletionMul");
+        //}
 
 
-        // save attributes to tree
-        public override void ToTreeAttributes(ITreeAttribute tree)
-        {
-            base.ToTreeAttributes(tree);
+        //// save attributes to tree
+        //public override void ToTreeAttributes(ITreeAttribute tree)
+        //{
+        //    base.ToTreeAttributes(tree);
 
-            if (State == null)
-                return;
+        //    if (State == null)
+        //        return;
 
-            tree.SetDouble("CurrentFuelHours", State.CurrentFuelHours);
-            tree.SetDouble("CurrentDepletionMul", State.CurrentDepletionMul);
-        }
+        //    tree.SetDouble("CurrentFuelHours", State.CurrentFuelHours);
+        //    tree.SetDouble("CurrentDepletionMul", State.CurrentDepletionMul);
+        //}
 
 
         // transfer state from itemStack
@@ -150,21 +148,21 @@ namespace Rekindled.src
 
         public override void OnBlockBroken(IPlayer byPlayer = null)
         {
-            SetBlockDrops();
+            // SetBlockDrops();
             base.OnBlockBroken(byPlayer);
         }
 
 
         // save the current attributes to the block drops when this block is broken
-        void SetBlockDrops()
-        {
-            Block block = Blockentity.Block;
+        //void SetBlockDrops()
+        //{
+        //    Block block = Blockentity.Block;
 
-            foreach (BlockDropItemStack blockDrop in block.Drops)
-            {
-                blockDrop.ResolvedItemstack.Attributes.SetDouble("state.CurrentFuel", State.CurrentFuelHours);
-                blockDrop.ResolvedItemstack.Attributes.SetDouble("state.CurrentDepletionMul", State.CurrentDepletionMul);
-            }
-        }
+        //    foreach (BlockDropItemStack blockDrop in block.Drops)
+        //    {
+        //        blockDrop.ResolvedItemstack.Attributes.SetDouble("state.CurrentFuel", State.CurrentFuelHours);
+        //        blockDrop.ResolvedItemstack.Attributes.SetDouble("state.CurrentDepletionMul", State.CurrentDepletionMul);
+        //    }
+        //}
     }
 }

@@ -1,23 +1,20 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 using Vintagestory.API.Common;
 using Vintagestory.API.Datastructures;
 using Vintagestory.API.MathTools;
-using Vintagestory.API.Server;
 
 namespace Rekindled.src
 {
     // TODO: make this inherit from a generic transient light class to allow for item transient lights as well
 
-    class BlockBehaviorTransientLight : BlockBehavior
+    public class BlockBehaviorTransientLight : BlockBehavior
     {
         // blockbehaviors are non-stateful, so just used to temporarily store data
         public TransientLightProps Props;
-        public TransientLightState State;
+
 
         public BlockBehaviorTransientLight(Block block) : base(block)
         {
@@ -29,12 +26,6 @@ namespace Rekindled.src
             Props = block.Attributes["transientLightProps"].AsObject<TransientLightProps>();
             if (Props == null)
                 return;
-
-            State = new TransientLightState(Props);
-
-            if (!Enum.TryParse(block.Variant["state"], true, out EnumLightState lightState))
-                return;
-            State.LightState = lightState;
         }
 
 
@@ -59,7 +50,7 @@ namespace Rekindled.src
             if (!slot.Itemstack.Collectible.HasBehavior(typeof(BlockBehaviorTransientLight)))
                 return null;
 
-            string toState = Enum.GetName(typeof(EnumLightState), toLightState).ToLower();
+            string toState = toLightState.GetName().ToLower();
 
             AssetLocation blockCode = block.CodeWithVariant("state", toState);
 
@@ -113,22 +104,13 @@ namespace Rekindled.src
 
         public override string GetHeldBlockInfo(IWorldAccessor world, ItemSlot inSlot)
         {
-            if (State == null || !inSlot.Itemstack.Attributes.HasAttribute("transientState"))
+            if (!inSlot.Itemstack.Attributes.HasAttribute("transientState"))
                 return base.GetHeldBlockInfo(world, inSlot);
 
             ITreeAttribute attr = (ITreeAttribute)inSlot.Itemstack.Attributes["transientState"];
             return "\nState: " + ((EnumLightState)attr.GetInt("currentLightState")).GetName() + 
                     "\nFuel Hours Remaining: " + Math.Round(attr.GetDouble("currentFuelHours"), 2) + 
                     "\nCurrent Depletion Multiplier: x" + Math.Round(attr.GetDouble("currentDepletionMul"), 2);
-        }
-
-
-        public override string GetPlacedBlockInfo(IWorldAccessor world, BlockPos pos, IPlayer forPlayer)
-        {
-            if (State == null)
-                return base.GetPlacedBlockInfo(world, pos, forPlayer);
-            return base.GetPlacedBlockInfo(world, pos, forPlayer) + 
-                "\nState: " + block.Variant["state"] + "\nFuel Hours Remaining: " + State.CurrentFuelHours + "\nCurrent Depletion Multiplier: x" + State.CurrentDepletionMul;
         }
     }
 }
