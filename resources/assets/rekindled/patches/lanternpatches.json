@@ -1,0 +1,13 @@
+[
+  {
+    "file": "game:blocktypes/metal/lantern.json",
+    "op": "add",
+    "path": "/attributes",
+    "value": {
+      "transientLightProps": {
+        "maxFuelHours": 256,
+        "baseDepletionMul": 1
+      }
+    }
+  }
+]

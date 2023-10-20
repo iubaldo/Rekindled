@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 
 using Vintagestory.API.Common;
 using Vintagestory.API.Datastructures;
@@ -9,6 +10,27 @@ using Vintagestory.API.MathTools;
 namespace Rekindled.src
 {
     // TODO: make this inherit from a generic transient light class to allow for item transient lights as well
+
+
+    public class CollectibleBehaviorTLDescription : CollectibleBehavior
+    {
+        public CollectibleBehaviorTLDescription(CollectibleObject collObj) : base(collObj) { }
+
+
+        public override void GetHeldItemInfo(ItemSlot inSlot, StringBuilder dsc, IWorldAccessor world, bool withDebugInfo)
+        {
+            base.GetHeldItemInfo(inSlot, dsc, world, withDebugInfo);
+
+            if (!inSlot.Itemstack.Attributes.HasAttribute("transientState"))
+                return;
+
+            ITreeAttribute attr = (ITreeAttribute)inSlot.Itemstack.Attributes["transientState"];
+            dsc.AppendLine("\nState: " + ((EnumLightState)attr.GetInt("currentLightState")).GetName() +
+                    "\nFuel Hours Remaining: " + Math.Round(attr.GetDouble("currentFuelHours"), 2) +
+                    "\nCurrent Depletion Multiplier: x" + Math.Round(attr.GetDouble("currentDepletionMul"), 2));
+        }
+    }
+
 
     public class BlockBehaviorTransientLight : BlockBehavior
     {
@@ -24,8 +46,6 @@ namespace Rekindled.src
                 return;
 
             Props = block.Attributes["transientLightProps"].AsObject<TransientLightProps>();
-            if (Props == null)
-                return;
         }
 
 
@@ -112,5 +132,17 @@ namespace Rekindled.src
                     "\nFuel Hours Remaining: " + Math.Round(attr.GetDouble("currentFuelHours"), 2) + 
                     "\nCurrent Depletion Multiplier: x" + Math.Round(attr.GetDouble("currentDepletionMul"), 2);
         }
+
+        //public override void GetHeldItemInfo(ItemSlot inSlot, StringBuilder dsc, IWorldAccessor world, bool withDebugInfo)
+        //{
+        //    base.GetHeldItemInfo(inSlot, dsc, world, withDebugInfo);
+        //    //if (!inSlot.Itemstack.Attributes.HasAttribute("transientState"))
+        //    //    return;
+
+        //    ITreeAttribute attr = (ITreeAttribute)inSlot.Itemstack.Attributes["transientState"];
+        //    dsc.Append("\nState: " + ((EnumLightState)attr.GetInt("currentLightState")).GetName() +
+        //            "\nFuel Hours Remaining: " + Math.Round(attr.GetDouble("currentFuelHours"), 2) +
+        //            "\nCurrent Depletion Multiplier: x" + Math.Round(attr.GetDouble("currentDepletionMul"), 2));
+        //}
     }
 }

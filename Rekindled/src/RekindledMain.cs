@@ -44,7 +44,7 @@ namespace Rekindled.src
      */
 
 
-    class RekindledMain : ModSystem
+    public class RekindledMain : ModSystem
     {
         const string PATCH_CODE = "Landar.Rekindled.RekindledMain";
 
@@ -63,6 +63,7 @@ namespace Rekindled.src
             // register behaviors
             api.RegisterBlockBehaviorClass("blockbehaviortransientlight", typeof(BlockBehaviorTransientLight));
             api.RegisterBlockEntityBehaviorClass("bebehaviortransientlight", typeof(BEBehaviorTransientLight));
+            api.RegisterCollectibleBehaviorClass("collectibleBehaviorTLDescription", typeof(CollectibleBehaviorTLDescription));
 
             // apply harmony patches
             harmony.PatchAll();
@@ -116,6 +117,7 @@ namespace Rekindled.src
                 if (block.Code != null && IsBlockTransientLight(block))
                 {
                     block.BlockBehaviors = block.BlockBehaviors.Append(new BlockBehaviorTransientLight(block));
+                    block.CollectibleBehaviors = block.CollectibleBehaviors.Append(new CollectibleBehaviorTLDescription(block));
 
                     var bebehavior = new BlockEntityBehaviorType
                     {
@@ -130,7 +132,7 @@ namespace Rekindled.src
             //{
             //    if (item.Code == null)
             //        continue;
-                
+
             //    if (item.Code.FirstPathPart == "candle")
             //        // add behavior to item
             //}
@@ -184,7 +186,7 @@ namespace Rekindled.src
                 .EndSubCommand()
 
                 .BeginSubCommand("setAttr")
-                    .WithArgs(parsers.WordRange("attribute", 
+                    .WithArgs(parsers.WordRange("attribute",
                                                 "createdTotalHours", "lastUpdatedTotalHours", "currentLightState", "currentFuelHours", "currentDepletionMul"),
                               parsers.Double("value"))
                     .WithDescription("adjust the transientState attributes of a transientlight object in hand")
@@ -260,7 +262,7 @@ namespace Rekindled.src
         TextCommandResult OnCmdGetAttr(TextCommandCallingArgs args)
         {
             ItemSlot slot = args.Caller.Player.InventoryManager.ActiveHotbarSlot;
-            
+
             if (!IsSlotTransientLight(slot))
                 return TextCommandResult.Error("Error, current slot does not contain a transientLight.");
 
