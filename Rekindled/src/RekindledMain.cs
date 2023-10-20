@@ -119,11 +119,11 @@ namespace Rekindled.src
                     block.BlockBehaviors = block.BlockBehaviors.Append(new BlockBehaviorTransientLight(block));
                     block.CollectibleBehaviors = block.CollectibleBehaviors.Append(new CollectibleBehaviorTLDescription(block));
 
-                    var bebehavior = new BlockEntityBehaviorType
-                    {
-                        Name = "bebehaviortransientlight",
-                        properties = null
-                    };
+                    //var bebehavior = new BlockEntityBehaviorType
+                    //{
+                    //    Name = "bebehaviortransientlight",
+                    //    properties = null
+                    //};
                     // block.BlockEntityBehaviors = block.BlockEntityBehaviors.Append(bebehavior);
                 }
             }
