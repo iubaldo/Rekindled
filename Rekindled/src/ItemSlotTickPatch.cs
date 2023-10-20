@@ -23,22 +23,25 @@ namespace Rekindled.src
         const string ATTR_CURRENT_DEPLETION_MUL = "currentDepletionMul";
 
 
-
-
-
         [HarmonyPrefix]
         [HarmonyPatch(typeof(CollectibleObject), "UpdateAndGetTransitionStatesNative")]
         public static void PrefixUpdateAndGetTransitionStatesNative(IWorldAccessor world, ItemSlot inslot)
         {
+            UpdateTransientState(world, inslot);
+        }
+
+
+        public static ItemStack UpdateTransientState(IWorldAccessor world, ItemSlot inslot)
+        {
             if (inslot is ItemSlotCreative)
-                return;
+                return null;
 
             ItemStack itemStack = inslot.Itemstack;
-            if (itemStack == null) 
-                return;
+            if (itemStack == null)
+                return null;
 
             if (!inslot.Itemstack.Collectible.HasBehavior(typeof(BlockBehaviorTransientLight))) // TODO: update this for generic light sources (not just blocks)
-                return;
+                return null;
 
 
             var behavior = inslot.Itemstack.Block.GetBehavior(typeof(BlockBehaviorTransientLight), false) as BlockBehaviorTransientLight;
@@ -82,12 +85,15 @@ namespace Rekindled.src
 
             double hoursPassed = currentTotalHours - attr.GetDouble(ATTR_LAST_UPDATED_TOTAL_HOURS);
 
+            ItemStack transitionStack = null;
             if (lightState == EnumLightState.Lit)
             {
                 if (hoursPassed > 0.05f)
                 {
                     double hoursPassedAdjusted = hoursPassed * currentDepletionMul;
-                    attr.SetDouble(ATTR_CURRENT_FUEL_HOURS, currentFuelHours - hoursPassedAdjusted);
+                    RekindledMain.sapi.Logger.Notification("Fuel: " + currentFuelHours + " -> " + (currentFuelHours - hoursPassedAdjusted));
+                    currentFuelHours -= hoursPassedAdjusted;
+                    attr.SetDouble(ATTR_CURRENT_FUEL_HOURS, currentFuelHours);
                 }
 
                 if (currentFuelHours <= 0 && world.Side == EnumAppSide.Server) // perform transition to burnedout state
@@ -102,12 +108,16 @@ namespace Rekindled.src
                     attr.SetInt(ATTR_CURRENT_LIGHT_STATE, (int)behavior.GetLightState());
                     attr.SetInt(ATTR_CURRENT_FUEL_HOURS, 0);
 
+                    transitionStack = inslot.Itemstack;
+
                     inslot.MarkDirty();
                 }
             }
 
             if (hoursPassed > 0.05f)
                 attr.SetDouble(ATTR_LAST_UPDATED_TOTAL_HOURS, currentTotalHours);
+
+            return transitionStack;
         }
     }
 }

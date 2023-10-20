@@ -6,7 +6,6 @@ using System.Text;
 using Vintagestory.API.Common;
 using Vintagestory.API.Datastructures;
 using Vintagestory.API.MathTools;
-using static HarmonyLib.Code;
 
 namespace Rekindled.src
 {
