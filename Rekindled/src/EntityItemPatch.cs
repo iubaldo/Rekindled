@@ -7,7 +7,7 @@ using Vintagestory.GameContent;
 namespace Rekindled.src
 {
     [HarmonyPatch]
-    public class InfoPanelPatch
+    public class EntityItemPatch
     {
         //[HarmonyPrefix]
         //[HarmonyPatch(typeof(EntityItem), "OnGameTick")]
