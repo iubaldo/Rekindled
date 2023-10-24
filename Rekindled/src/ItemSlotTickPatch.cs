@@ -15,12 +15,6 @@ namespace Rekindled.src
     public class ItemSlotTickPatch
     {
         // magic strings for attributes
-        const string ATTR_TRANSIENT_STATE = "transientState";
-        const string ATTR_CREATED_TOTAL_HOURS = "createdTotalHours";
-        const string ATTR_LAST_UPDATED_TOTAL_HOURS = "lastUpdatedTotalHours";
-        const string ATTR_CURRENT_LIGHT_STATE = "currentLightState";
-        const string ATTR_CURRENT_FUEL_HOURS = "currentFuelHours";
-        const string ATTR_CURRENT_DEPLETION_MUL = "currentDepletionMul";
 
 
         [HarmonyPrefix]
@@ -52,10 +46,10 @@ namespace Rekindled.src
             if (itemStack.Attributes == null)
                 itemStack.Attributes = new TreeAttribute();
 
-            if (!itemStack.Attributes.HasAttribute(ATTR_TRANSIENT_STATE))
-                itemStack.Attributes[ATTR_TRANSIENT_STATE] = new TreeAttribute();
+            if (!itemStack.Attributes.HasAttribute(TransientUtil.ATTR_STATE))
+                itemStack.Attributes[TransientUtil.ATTR_STATE] = new TreeAttribute();
 
-            ITreeAttribute attr = (ITreeAttribute)itemStack.Attributes[ATTR_TRANSIENT_STATE];
+            ITreeAttribute attr = (ITreeAttribute)itemStack.Attributes[TransientUtil.ATTR_STATE];
 
 
             EnumLightState lightState;
@@ -63,27 +57,27 @@ namespace Rekindled.src
             double currentDepletionMul;
 
 
-            if (!attr.HasAttribute(ATTR_CREATED_TOTAL_HOURS)) // create new data
+            if (!attr.HasAttribute(TransientUtil.ATTR_CREATED_HOURS)) // create new data
             {
-                attr.SetDouble(ATTR_CREATED_TOTAL_HOURS, currentTotalHours);
-                attr.SetDouble(ATTR_LAST_UPDATED_TOTAL_HOURS, currentTotalHours);
+                attr.SetDouble(TransientUtil.ATTR_CREATED_HOURS, currentTotalHours);
+                attr.SetDouble(TransientUtil.ATTR_UPDATED_HOURS, currentTotalHours);
 
                 lightState = behavior.GetLightState();
                 currentFuelHours = behavior.Props.MaxFuelHours;
                 currentDepletionMul = behavior.Props.BaseDepletionMul;
 
-                attr.SetInt(ATTR_CURRENT_LIGHT_STATE, (int)lightState);
-                attr.SetDouble(ATTR_CURRENT_FUEL_HOURS, currentFuelHours);
-                attr.SetDouble(ATTR_CURRENT_DEPLETION_MUL, currentDepletionMul);
+                attr.SetInt(TransientUtil.ATTR_CURR_STATE, (int)lightState);
+                attr.SetDouble(TransientUtil.ATTR_CURR_HOURS, currentFuelHours);
+                attr.SetDouble(TransientUtil.ATTR_CURR_DEPLETION, currentDepletionMul);
             }
             else
             {
-                lightState = (EnumLightState)attr.GetInt(ATTR_CURRENT_LIGHT_STATE);
-                currentFuelHours = attr.GetDouble(ATTR_CURRENT_FUEL_HOURS);
-                currentDepletionMul = attr.GetDouble(ATTR_CURRENT_DEPLETION_MUL);
+                lightState = (EnumLightState)attr.GetInt(TransientUtil.ATTR_CURR_STATE);
+                currentFuelHours = attr.GetDouble(TransientUtil.ATTR_CURR_HOURS);
+                currentDepletionMul = attr.GetDouble(TransientUtil.ATTR_CURR_DEPLETION);
             }
 
-            double hoursPassed = currentTotalHours - attr.GetDouble(ATTR_LAST_UPDATED_TOTAL_HOURS);
+            double hoursPassed = currentTotalHours - attr.GetDouble(TransientUtil.ATTR_UPDATED_HOURS);
 
             ItemStack transitionStack = null;
             if (lightState == EnumLightState.Lit)
@@ -93,7 +87,7 @@ namespace Rekindled.src
                     double hoursPassedAdjusted = hoursPassed * currentDepletionMul;
                     RekindledMain.sapi.Logger.Notification("Fuel: " + currentFuelHours + " -> " + (currentFuelHours - hoursPassedAdjusted));
                     currentFuelHours -= hoursPassedAdjusted;
-                    attr.SetDouble(ATTR_CURRENT_FUEL_HOURS, currentFuelHours);
+                    attr.SetDouble(TransientUtil.ATTR_CURR_HOURS, currentFuelHours);
                 }
 
                 if (currentFuelHours <= 0 && world.Side == EnumAppSide.Server) // perform transition to burnedout state
@@ -103,10 +97,10 @@ namespace Rekindled.src
                     inslot.Itemstack.SetFrom(newStack);
 
                     behavior = inslot.Itemstack.Block.GetBehavior(typeof(BlockBehaviorTransientLight), false) as BlockBehaviorTransientLight;
-                    attr = (ITreeAttribute)inslot.Itemstack.Attributes[ATTR_TRANSIENT_STATE];
+                    attr = (ITreeAttribute)inslot.Itemstack.Attributes[TransientUtil.ATTR_STATE];
 
-                    attr.SetInt(ATTR_CURRENT_LIGHT_STATE, (int)behavior.GetLightState());
-                    attr.SetInt(ATTR_CURRENT_FUEL_HOURS, 0);
+                    attr.SetInt(TransientUtil.ATTR_CURR_STATE, (int)behavior.GetLightState());
+                    attr.SetInt(TransientUtil.ATTR_CURR_HOURS, 0);
 
                     transitionStack = inslot.Itemstack;
 
@@ -115,7 +109,7 @@ namespace Rekindled.src
             }
 
             if (hoursPassed > 0.05f)
-                attr.SetDouble(ATTR_LAST_UPDATED_TOTAL_HOURS, currentTotalHours);
+                attr.SetDouble(TransientUtil.ATTR_UPDATED_HOURS, currentTotalHours);
 
             return transitionStack;
         }

@@ -119,12 +119,12 @@ namespace Rekindled.src
                     block.BlockBehaviors = block.BlockBehaviors.Append(new BlockBehaviorTransientLight(block));
                     block.CollectibleBehaviors = block.CollectibleBehaviors.Append(new CollectibleBehaviorTLDescription(block));
 
-                    //var bebehavior = new BlockEntityBehaviorType
-                    //{
-                    //    Name = "bebehaviortransientlight",
-                    //    properties = null
-                    //};
-                    // block.BlockEntityBehaviors = block.BlockEntityBehaviors.Append(bebehavior);
+                    var bebehavior = new BlockEntityBehaviorType
+                    {
+                        Name = "bebehaviortransientlight",
+                        properties = null
+                    };
+                    block.BlockEntityBehaviors = block.BlockEntityBehaviors.Append(bebehavior);
                 }
             }
 
@@ -139,7 +139,7 @@ namespace Rekindled.src
         }
 
 
-        bool IsBlockTransientLight(Block block)
+        public static bool IsBlockTransientLight(Block block)
         {
             if (block.Code.Path.Contains("torch-basic")
                 || block.Code.Path.Contains("torch-crude")
@@ -155,6 +155,7 @@ namespace Rekindled.src
         }
 
 
+        // TODO: move command registry to seperate file
         void RegisterCommands()
         {
             CommandArgumentParsers parsers = sapi.ChatCommands.Parsers;
@@ -302,6 +303,7 @@ namespace Rekindled.src
         }
 
 
+        // TODO: move these to a seperate util class
         void TryTransitionEntityItem(ItemSlot slot)
         {
             var behavior = slot.Itemstack.Block.GetBehavior(typeof(BlockBehaviorTransientLight)) as BlockBehaviorTransientLight;
@@ -328,6 +330,17 @@ namespace Rekindled.src
                 return false;
 
             return true;
+        }
+
+
+        public static TransientLightProps ResolvePropsFromBlock(Block block)
+        {
+            if (block.Attributes == null)
+                return null;
+            if (!block.Attributes["transientLightProps"].Exists)
+                return null;
+
+            return block.Attributes["transientLightProps"].AsObject<TransientLightProps>();
         }
 
 

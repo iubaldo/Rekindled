@@ -15,13 +15,13 @@ using Vintagestory.API.Util;
 
 namespace Rekindled.src
 {
-    // this class allows placed transient lights to tick their fuel count
-    class BEBehaviorTransientLight : BlockEntityBehavior
+    public class BEBehaviorTransientLight : BlockEntityBehavior
     {
         public int checkIntervalMs = 2000; // every 2 seconds
 
         TransientLightProps Props;
-        // long listenerId; // ensure the GameTickListener is unique
+        TransientLightState State;
+        long listenerId; // ensure the GameTickListener is unique
 
         public BEBehaviorTransientLight(BlockEntity blockEntity) : base(blockEntity) { }
 
@@ -33,63 +33,93 @@ namespace Rekindled.src
             if (behavior == null)
                 return;
 
-            // Sanity check
+            // Sanity check from BlockEntityTransient
             if (api.Side == EnumAppSide.Server)
             {
-                if (Blockentity.Block.Id != Blockentity.Block.Id)
+                Block block = api.World.BlockAccessor.GetBlock(Pos);
+                if (block.Id != Blockentity.Block.Id)
                 {
-                    Api.World.Logger.Error("BEBehaviorTransientLight @{0} for Block {1}, but there is {2} at this position? Will delete BE", Blockentity.Pos, Blockentity.Block.Code.ToShortString(), Blockentity.Block.Code.ToShortString());
-                    // Can't delete during init
-                    api.Event.EnqueueMainThreadTask(() => api.World.BlockAccessor.RemoveBlockEntity(Blockentity.Pos), "delete betransientlight");
+                    if (block.EntityClass != Block.EntityClass)
+                    {
+                        Api.World.Logger.Warning("BETransient @{0} for Block {1}, but there is {2} at this position? Will delete BE and attempt to recreate it", Pos, Block.Code.ToShortString(), block.Code.ToShortString());
+                        api.Event.EnqueueMainThreadTask(delegate
+                        {
+                            api.World.BlockAccessor.RemoveBlockEntity(Pos);
+                            Block block2 = api.World.BlockAccessor.GetBlock(Pos);
+                            api.World.BlockAccessor.SetBlock(block2.Id, Pos);
+                        }, "delete betransient");
+                    }
+                    else
+                    {
+                        Api.World.Logger.Error("BETransient @{0} for Block {1}, but there is {2} at this position? Will delete BE", Pos, Block.Code.ToShortString(), block.Code.ToShortString());
+                        api.Event.EnqueueMainThreadTask(delegate
+                        {
+                            api.World.BlockAccessor.RemoveBlockEntity(Pos);
+                        }, "delete betransient");
+                    }
                     return;
                 }
             }
 
-            Props = behavior.Props;
+            if (Block.Attributes == null)
+                return;
+            if (!Block.Attributes["transientLightProps"].Exists)
+                return;
 
-            //if (api.Side == EnumAppSide.Server)
-            //{
-            //    if (listenerId != 0)
-            //        throw new InvalidOperationException("Initializing BEBehaviorTransientLight twice would create a memory and performance leak");
-                
-            //    // listenerId = Blockentity.RegisterGameTickListener(CheckBETransition, checkIntervalMs);
-            //}
+            Props = Block.Attributes["transientLightProps"].AsObject<TransientLightProps>();
 
-            Api.World.Logger.Error("BEBehaviorTransientLight @{0}: initializing props for {1}... ", Blockentity.Pos, this.Blockentity.Block.Code.ToShortString());
+            if (api.Side == EnumAppSide.Server)
+            {
+                if (listenerId != 0L)
+                    throw new InvalidOperationException("Initializing BEBehaviorTransientLight twice would create a memory and performance leak");
+
+                listenerId = Blockentity.RegisterGameTickListener(CheckTransition, checkIntervalMs);
+            }
         }
 
 
-        //public void CheckBETransition(float deltaTime)
-        //{
-        //    if (Blockentity.Block.Attributes == null)
-        //    {
-        //        Api.World.Logger.Error("BEBehaviorTransientLight @{0}: cannot find block attributes for {1}. Will stop transient timer", Blockentity.Pos, Blockentity.Block.Code.ToShortString());
-        //        Blockentity.UnregisterGameTickListener(listenerId);
-        //        return;
-        //    }
+        public void CheckTransition(float deltaTime)
+        {
+            if (State == null)
+            {
+                RekindledMain.sapi.Logger.Notification("state is null for BE");
+                return;
+            }
 
-        //    // In case this block was imported from another older world. In that case lastCheckAtTotalDays would be a future date.
-        //    State.LastUpdatedTotalHours = (float)Math.Min(State.LastUpdatedTotalHours, Api.World.Calendar.TotalDays);
+            if (Blockentity.Block.Attributes == null)
+            {
+                Api.World.Logger.Error("BEBehaviorTransientLight @{0}: cannot find block attributes for {1}. Will stop transition timer", Blockentity.Pos, Blockentity.Block.Code.ToShortString());
+                Blockentity.UnregisterGameTickListener(listenerId);
+                return;
+            }
 
-        //    float oneHour = 1f / Api.World.Calendar.HoursPerDay;
-        //    while (Api.World.Calendar.TotalDays - State.LastUpdatedTotalHours > oneHour) // if from an older world, simulate for difference in time
-        //    {
-        //        State.LastUpdatedTotalHours += oneHour;
-        //        State.CurrentFuelHours -= 1f;
+            // In case this block was imported from another older world.
+            State.LastUpdatedTotalHours = (float)Math.Min(State.LastUpdatedTotalHours, Api.World.Calendar.TotalHours);
 
-        //        if (State.CurrentFuelHours <= 0)
-        //        {
-        //            TryBETransition(EnumLightState.Burnedout);
-        //            break;
-        //        }
-        //    }
-        //}
+
+            //while (Api.World.Calendar.TotalHours - State.LastUpdatedTotalHours > 1) // if from an older world, simulate for difference in time
+            //{
+            //    State.LastUpdatedTotalHours += 1;
+            //    State.CurrentFuelHours -= 1f;
+
+                double hoursPassed = Api.World.Calendar.TotalHours - State.LastUpdatedTotalHours;
+                double hoursPassedAdjusted = hoursPassed * State.CurrentDepletionMul;
+
+                RekindledMain.sapi.Logger.Notification("Fuel: " + State.CurrentFuelHours + " -> " + (State.CurrentFuelHours - hoursPassedAdjusted));
+
+                if (State.CurrentFuelHours <= 0 && State.LightState == EnumLightState.Lit)
+                {
+                    TryTransition(EnumLightState.Burnedout);
+                    // break;
+                }
+            //}
+        }
 
 
         // attempts to transition the placed block
-        public void TryBETransition(EnumLightState toLightState)
+        public void TryTransition(EnumLightState toLightState)
         {
-            System.Diagnostics.Debug.WriteLine("TryBETransition: @{0}, attempting transition on {1}", Blockentity.Pos, Blockentity.Block.Code.ToShortString());
+            RekindledMain.sapi.Logger.Notification("TryTransition: @{0}, attempting transition on {1}", Blockentity.Pos, Blockentity.Block.Code.ToShortString());
 
             Block toBlock;
 
@@ -97,7 +127,7 @@ namespace Rekindled.src
             if (Blockentity.Block.Attributes == null)
                 return;
 
-            string toState = Enum.GetName(typeof(EnumLightState), toLightState);
+            string toState = toLightState.GetName().ToLower();
             if (toState == null)
                 return;
 
@@ -109,60 +139,112 @@ namespace Rekindled.src
 
             Api.World.BlockAccessor.SetBlock(toBlock.BlockId, Blockentity.Pos);
 
-            System.Diagnostics.Debug.WriteLine("TryBETransition: @{0}, successfully transitioned {1} to {2}", Blockentity.Pos, Blockentity.Block.Code.ToShortString(), toState);
+            RekindledMain.sapi.Logger.Notification("TryTransition: @{0}, successfully transitioned {1} to {2}", Blockentity.Pos, Blockentity.Block.Code.ToShortString(), toState);
         }
 
 
-        //// load attributes from tree
-        //public override void FromTreeAttributes(ITreeAttribute tree, IWorldAccessor worldAccessForResolve)
-        //{
-        //    base.FromTreeAttributes(tree, worldAccessForResolve);
+        public override void FromTreeAttributes(ITreeAttribute tree, IWorldAccessor worldAccessForResolve)
+        {
+            base.FromTreeAttributes(tree, worldAccessForResolve);
 
-        //    if (State == null)
-        //        return;
+            if (Props == null)
+                return;
 
-        //    State.CurrentFuelHours = tree.GetFloat("CurrentFuelHours");
-        //    State.CurrentDepletionMul = tree.GetFloat("CurrentDepletionMul");
-        //}
+            if (State == null 
+                && tree.HasAttribute(TransientUtil.ATTR_CURR_HOURS)
+                && tree.HasAttribute(TransientUtil.ATTR_CURR_HOURS)
+                && tree.HasAttribute(TransientUtil.ATTR_CURR_HOURS))
+            {
+                State = new TransientLightState(Props) { 
+                    CurrentFuelHours = tree.GetDouble(TransientUtil.ATTR_CURR_HOURS),
+                    CurrentDepletionMul = tree.GetDouble(TransientUtil.ATTR_CURR_DEPLETION),
+                    LastUpdatedTotalHours = tree.GetDouble(TransientUtil.ATTR_UPDATED_HOURS)
+                };
+
+            }
+            else if (State != null)
+            {
+                State.CurrentFuelHours = tree.GetFloat(TransientUtil.ATTR_CURR_HOURS);
+                State.CurrentDepletionMul = tree.GetFloat(TransientUtil.ATTR_CURR_DEPLETION);
+                State.LastUpdatedTotalHours = tree.GetFloat(TransientUtil.ATTR_UPDATED_HOURS);
+            }
+        }
 
 
-        //// save attributes to tree
-        //public override void ToTreeAttributes(ITreeAttribute tree)
-        //{
-        //    base.ToTreeAttributes(tree);
+        public override void ToTreeAttributes(ITreeAttribute tree)
+        {
+            base.ToTreeAttributes(tree);
 
-        //    if (State == null)
-        //        return;
+            if (State == null)
+                return;
 
-        //    tree.SetDouble("CurrentFuelHours", State.CurrentFuelHours);
-        //    tree.SetDouble("CurrentDepletionMul", State.CurrentDepletionMul);
-        //}
+            tree.SetDouble(TransientUtil.ATTR_CURR_HOURS, State.CurrentFuelHours);
+            tree.SetDouble(TransientUtil.ATTR_CURR_DEPLETION, State.CurrentDepletionMul);
+            tree.SetDouble(TransientUtil.ATTR_UPDATED_HOURS, State.LastUpdatedTotalHours);
+        }
 
 
         // transfer state from itemStack
         public override void OnBlockPlaced(ItemStack byItemStack)
         {
-            // need a way to access fromStack (will be fixed in 1.18)
+            if (byItemStack == null) // placed by worldgen/already exists, just load treeattributes instead
+            {
+                RekindledMain.sapi.Logger.Notification("byItemStack was null");
+                return;
+            } 
+
+            if (!byItemStack.Attributes.HasAttribute(TransientUtil.ATTR_STATE))
+                return;
+
+            ITreeAttribute attr = (ITreeAttribute)byItemStack.Attributes[TransientUtil.ATTR_STATE];
+            TransientLightProps lightProps = RekindledMain.ResolvePropsFromBlock(byItemStack.Block);
+
+            if (lightProps == null)
+                return;
+
+            Props = lightProps;
+            State = new TransientLightState(Props)
+            {
+                CurrentFuelHours = attr.GetDouble(TransientUtil.ATTR_CURR_HOURS),
+                CurrentDepletionMul = attr.GetDouble(TransientUtil.ATTR_CURR_DEPLETION)
+            };
         }
 
 
         public override void OnBlockBroken(IPlayer byPlayer = null)
         {
-            // SetBlockDrops();
+            SetBlockDrops();
             base.OnBlockBroken(byPlayer);
         }
 
 
-        // save the current attributes to the block drops when this block is broken
-        //void SetBlockDrops()
-        //{
-        //    Block block = Blockentity.Block;
+        //save the current attributes to the block drops when this block is broken
+        void SetBlockDrops()
+        {
+            if (State == null)
+                return;
 
-        //    foreach (BlockDropItemStack blockDrop in block.Drops)
-        //    {
-        //        blockDrop.ResolvedItemstack.Attributes.SetDouble("state.CurrentFuel", State.CurrentFuelHours);
-        //        blockDrop.ResolvedItemstack.Attributes.SetDouble("state.CurrentDepletionMul", State.CurrentDepletionMul);
-        //    }
-        //}
+           Block block = Blockentity.Block;
+
+            foreach (BlockDropItemStack blockDrop in block.Drops)
+            {
+                blockDrop.ResolvedItemstack.Attributes.SetDouble(TransientUtil.ATTR_CURR_HOURS, State.CurrentFuelHours);
+                blockDrop.ResolvedItemstack.Attributes.SetDouble(TransientUtil.ATTR_CURR_DEPLETION, State.CurrentDepletionMul);
+                blockDrop.ResolvedItemstack.Attributes.SetDouble(TransientUtil.ATTR_UPDATED_HOURS, State.LastUpdatedTotalHours);
+            }
+        }
+
+
+        public override void GetBlockInfo(IPlayer forPlayer, StringBuilder dsc)
+        {
+            base.GetBlockInfo(forPlayer, dsc);
+
+            if (State == null)
+                return;
+
+            dsc.Append("\nState: " + State.LightState.GetName() +
+                    "\nFuel Hours Remaining: " + Math.Round(State.CurrentFuelHours, 2) +
+                    "\nCurrent Depletion Multiplier: x" + Math.Round(State.CurrentDepletionMul, 2));
+        }
     }
 }

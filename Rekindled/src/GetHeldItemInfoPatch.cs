@@ -1,12 +1,11 @@
 ﻿using HarmonyLib;
+
+using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Reflection.Emit;
 using System.Text;
 
 using Vintagestory.GameContent;
 using Vintagestory.API.Common;
-using System;
 using Vintagestory.API.Client;
 using Vintagestory.API.Config;
 using Vintagestory.API.Datastructures;

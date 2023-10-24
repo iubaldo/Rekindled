@@ -42,13 +42,11 @@ namespace Rekindled.src
 
         public BlockBehaviorTransientLight(Block block) : base(block)
         {
-            if (block.Attributes == null)
-                return;
-            if (!block.Attributes["transientLightProps"].Exists)
-                return;
-
-            Props = block.Attributes["transientLightProps"].AsObject<TransientLightProps>();
+            Props = RekindledMain.ResolvePropsFromBlock(block);
         }
+
+
+        
 
 
         public void TryBlockTransition(EnumLightState toLightState, ItemSlot slot)
@@ -86,41 +84,6 @@ namespace Rekindled.src
             RekindledMain.sapi.Logger.Notification("Attempting to transition block \"" + block.Code + "\" to variant \"" + newStack.Block.Code + "\"");
 
             return newStack;
-        }
-
-
-        public override ItemStack[] GetDrops(IWorldAccessor world, BlockPos pos, IPlayer byPlayer, ref float dropChanceMultiplier, ref EnumHandling handling)
-        {
-            List<ItemStack> toDrop = new();
-
-            for (int i = 0; i < block.Drops.Length; i++)
-            {
-                BlockDropItemStack dropStack = block.Drops[i];
-                if (dropStack.Tool != null && (byPlayer == null || dropStack.Tool != byPlayer.InventoryManager.ActiveTool)) 
-                    continue;
-
-                float extraMul = 1f;
-                if (dropStack.DropModbyStat != null)
-                    extraMul = byPlayer.Entity.Stats.GetBlended(dropStack.DropModbyStat); // If the stat does not exist, then GetBlended returns 1 \o/
-
-                ItemStack stack = block.Drops[i].GetNextItemStack(extraMul); // * dropQuantityMul -> not sure if this is needed since light sources don't drop multiple
-                if (stack == null) 
-                    continue;
-
-                toDrop.Add(stack);
-                if (block.Drops[i].LastDrop) 
-                    break;
-            }
-
-            if (block.BlockEntityBehaviors.OfType<BEBehaviorTransientLight>().Any())
-            {
-                // transfer attributes to toDrop itemStack
-                // might move this to the BEBehavior, since Block doesn't have access to BlockEntity, but the reverse is true
-                // or modify block.Drops (which is a BlockDropItemStack)
-            }
-
-            handling = EnumHandling.PreventDefault; // want to fully override base function, but still allow other behaviors to work
-            return toDrop.ToArray();
         }
 
 
