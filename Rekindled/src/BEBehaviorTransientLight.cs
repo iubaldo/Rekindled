@@ -219,6 +219,7 @@ namespace Rekindled.src
 
         public override void OnBlockBroken(IPlayer byPlayer = null)
         {
+            Blockentity.Block.GetBehavior<BlockBehaviorTransientLight>().State = State;
             SetBlockDrops();
             base.OnBlockBroken(byPlayer);
         }

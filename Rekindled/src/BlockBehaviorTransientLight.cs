@@ -36,8 +36,9 @@ namespace Rekindled.src
 
     public class BlockBehaviorTransientLight : BlockBehavior
     {
-        // blockbehaviors are non-stateful, so just used to temporarily store data
+        // blockbehaviors are non-stateful, so just used to temporarily store data -> store the actual data in itemstack.attributes
         public TransientLightProps Props;
+        public TransientLightState State;
 
 
         public BlockBehaviorTransientLight(Block block) : base(block)
@@ -84,27 +85,72 @@ namespace Rekindled.src
         }
 
 
-        //public override string GetHeldBlockInfo(IWorldAccessor world, ItemSlot inSlot)
-        //{
-        //    if (!inSlot.Itemstack.Attributes.HasAttribute("transientState"))
-        //        return base.GetHeldBlockInfo(world, inSlot);
+        public override ItemStack[] GetDrops(IWorldAccessor world, BlockPos pos, IPlayer byPlayer, ref float dropChanceMultiplier, ref EnumHandling handling)
+        {
+            if (State == null)
+            {
+                handling = EnumHandling.PassThrough;
+                RekindledMain.sapi.Logger.Notification("getdrops state was null");
+                return null;
+            }
 
-        //    ITreeAttribute attr = (ITreeAttribute)inSlot.Itemstack.Attributes["transientState"];
-        //    return "\nState: " + ((EnumLightState)attr.GetInt("currentLightState")).GetName() + 
-        //            "\nFuel Hours Remaining: " + Math.Round(attr.GetDouble("currentFuelHours"), 2) + 
-        //            "\nCurrent Depletion Multiplier: x" + Math.Round(attr.GetDouble("currentDepletionMul"), 2);
-        //}
+            RekindledMain.sapi.Logger.Notification("calling bbehavior getdrops");
 
-        //public override void GetHeldItemInfo(ItemSlot inSlot, StringBuilder dsc, IWorldAccessor world, bool withDebugInfo)
-        //{
-        //    base.GetHeldItemInfo(inSlot, dsc, world, withDebugInfo);
-        //    //if (!inSlot.Itemstack.Attributes.HasAttribute("transientState"))
-        //    //    return;
+            List<ItemStack> stacks = new();
+            foreach (BlockDropItemStack dstack in block.Drops)
+            {
+                ItemStack itemStack = dstack.ResolvedItemstack;
+                if (itemStack.Attributes == null)
+                    itemStack.Attributes = new TreeAttribute();
 
-        //    ITreeAttribute attr = (ITreeAttribute)inSlot.Itemstack.Attributes["transientState"];
-        //    dsc.Append("\nState: " + ((EnumLightState)attr.GetInt("currentLightState")).GetName() +
-        //            "\nFuel Hours Remaining: " + Math.Round(attr.GetDouble("currentFuelHours"), 2) +
-        //            "\nCurrent Depletion Multiplier: x" + Math.Round(attr.GetDouble("currentDepletionMul"), 2));
-        //}
+                if (!itemStack.Attributes.HasAttribute(TransientUtil.ATTR_STATE))
+                    itemStack.Attributes[TransientUtil.ATTR_STATE] = new TreeAttribute();
+
+                ITreeAttribute attr = (ITreeAttribute)itemStack.Attributes[TransientUtil.ATTR_STATE];
+
+                if (!attr.HasAttribute(TransientUtil.ATTR_CREATED_HOURS))
+                    attr.SetDouble(TransientUtil.ATTR_CREATED_HOURS, State.CreatedTotalHours);
+
+                attr.SetInt(TransientUtil.ATTR_STATE, (int)State.LightState);
+                attr.SetDouble(TransientUtil.ATTR_CURR_HOURS, State.CurrentFuelHours);
+                attr.SetDouble(TransientUtil.ATTR_CURR_DEPLETION, State.CurrentDepletionMul);
+                attr.SetDouble(TransientUtil.ATTR_UPDATED_HOURS, State.LastUpdatedTotalHours);
+            }
+            handling = EnumHandling.PreventDefault;
+
+            return stacks.ToArray();
+        }
+
+
+        public override ItemStack OnPickBlock(IWorldAccessor world, BlockPos pos, ref EnumHandling handling)
+        {
+            if (State == null)
+            {
+                handling = EnumHandling.PassThrough;
+                return base.OnPickBlock(world, pos, ref handling);
+            }
+
+            RekindledMain.sapi.Logger.Notification("calling bbehavior onpickblock");
+          
+            ItemStack itemStack = new ItemStack(block);
+            if (itemStack.Attributes == null)
+                itemStack.Attributes = new TreeAttribute();
+
+            if (!itemStack.Attributes.HasAttribute(TransientUtil.ATTR_STATE))
+                itemStack.Attributes[TransientUtil.ATTR_STATE] = new TreeAttribute();
+
+            ITreeAttribute attr = (ITreeAttribute)itemStack.Attributes[TransientUtil.ATTR_STATE];
+
+            if (!attr.HasAttribute(TransientUtil.ATTR_CREATED_HOURS))
+                attr.SetDouble(TransientUtil.ATTR_CREATED_HOURS, State.CreatedTotalHours);
+
+            attr.SetInt(TransientUtil.ATTR_STATE, (int)State.LightState);
+            attr.SetDouble(TransientUtil.ATTR_CURR_HOURS, State.CurrentFuelHours);
+            attr.SetDouble(TransientUtil.ATTR_CURR_DEPLETION, State.CurrentDepletionMul);
+            attr.SetDouble(TransientUtil.ATTR_UPDATED_HOURS, State.LastUpdatedTotalHours);
+            
+            handling = EnumHandling.Handled;
+            return itemStack;
+        }
     }
 }

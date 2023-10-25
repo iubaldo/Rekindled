@@ -111,6 +111,24 @@ namespace Rekindled.src
             if (hoursPassed > 0.05f)
                 attr.SetDouble(TransientUtil.ATTR_UPDATED_HOURS, currentTotalHours);
 
+            if (behavior.State == null)
+                behavior.State = new TransientLightState(props)
+                {
+                    LightState = lightState,
+                    LastUpdatedTotalHours = attr.GetDouble(TransientUtil.ATTR_UPDATED_HOURS),
+                    CurrentFuelHours = currentFuelHours,
+                    CurrentDepletionMul = currentDepletionMul,
+                    CreatedTotalHours = attr.GetDouble(TransientUtil.ATTR_CREATED_HOURS)
+                };
+            else
+            {
+                behavior.State.LightState = lightState;
+                behavior.State.LastUpdatedTotalHours = attr.GetDouble(TransientUtil.ATTR_UPDATED_HOURS);
+                behavior.State.CurrentFuelHours = currentFuelHours;
+                behavior.State.CurrentDepletionMul = currentDepletionMul;
+                behavior.State.CreatedTotalHours = attr.GetDouble(TransientUtil.ATTR_CREATED_HOURS);
+            }
+
             return transitionStack;
         }
     }
