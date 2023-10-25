@@ -20,7 +20,7 @@ namespace Rekindled.src
         public int checkIntervalMs = 2000; // every 2 seconds
 
         TransientLightProps Props;
-        TransientLightState State;
+        public TransientLightState State;
         long listenerId; // ensure the GameTickListener is unique
 
         public BEBehaviorTransientLight(BlockEntity blockEntity) : base(blockEntity) { }
@@ -73,12 +73,12 @@ namespace Rekindled.src
                 if (listenerId != 0L)
                     throw new InvalidOperationException("Initializing BEBehaviorTransientLight twice would create a memory and performance leak");
 
-                listenerId = Blockentity.RegisterGameTickListener(CheckTransition, checkIntervalMs);
+                listenerId = Blockentity.RegisterGameTickListener(UpdateAndCheckTransition, checkIntervalMs);
             }
         }
 
 
-        public void CheckTransition(float deltaTime)
+        public void UpdateAndCheckTransition(float deltaTime)
         {
             if (State == null)
             {
@@ -93,26 +93,22 @@ namespace Rekindled.src
                 return;
             }
 
-            // In case this block was imported from another older world.
-            State.LastUpdatedTotalHours = (float)Math.Min(State.LastUpdatedTotalHours, Api.World.Calendar.TotalHours);
-
-
-            //while (Api.World.Calendar.TotalHours - State.LastUpdatedTotalHours > 1) // if from an older world, simulate for difference in time
-            //{
-            //    State.LastUpdatedTotalHours += 1;
-            //    State.CurrentFuelHours -= 1f;
-
-                double hoursPassed = Api.World.Calendar.TotalHours - State.LastUpdatedTotalHours;
+            double hoursPassed = Api.World.Calendar.TotalHours - State.LastUpdatedTotalHours;
+                
+            if (hoursPassed > 0.05f)
+            {
                 double hoursPassedAdjusted = hoursPassed * State.CurrentDepletionMul;
-
-                RekindledMain.sapi.Logger.Notification("Fuel: " + State.CurrentFuelHours + " -> " + (State.CurrentFuelHours - hoursPassedAdjusted));
+                RekindledMain.sapi.Logger.Notification("Fuel: " + Math.Round(State.CurrentFuelHours, 2) + " -> " + Math.Round(State.CurrentFuelHours - hoursPassedAdjusted, 2));
+                State.CurrentFuelHours -= hoursPassedAdjusted;
 
                 if (State.CurrentFuelHours <= 0 && State.LightState == EnumLightState.Lit)
                 {
                     TryTransition(EnumLightState.Burnedout);
-                    // break;
                 }
-            //}
+            }
+
+            State.LastUpdatedTotalHours = Api.World.Calendar.TotalHours;
+            Blockentity.MarkDirty();
         }
 
 
@@ -152,8 +148,8 @@ namespace Rekindled.src
 
             if (State == null 
                 && tree.HasAttribute(TransientUtil.ATTR_CURR_HOURS)
-                && tree.HasAttribute(TransientUtil.ATTR_CURR_HOURS)
-                && tree.HasAttribute(TransientUtil.ATTR_CURR_HOURS))
+                && tree.HasAttribute(TransientUtil.ATTR_CURR_DEPLETION)
+                && tree.HasAttribute(TransientUtil.ATTR_UPDATED_HOURS))
             {
                 State = new TransientLightState(Props) { 
                     CurrentFuelHours = tree.GetDouble(TransientUtil.ATTR_CURR_HOURS),
@@ -164,9 +160,9 @@ namespace Rekindled.src
             }
             else if (State != null)
             {
-                State.CurrentFuelHours = tree.GetFloat(TransientUtil.ATTR_CURR_HOURS);
-                State.CurrentDepletionMul = tree.GetFloat(TransientUtil.ATTR_CURR_DEPLETION);
-                State.LastUpdatedTotalHours = tree.GetFloat(TransientUtil.ATTR_UPDATED_HOURS);
+                State.CurrentFuelHours = tree.GetDouble(TransientUtil.ATTR_CURR_HOURS);
+                State.CurrentDepletionMul = tree.GetDouble(TransientUtil.ATTR_CURR_DEPLETION);
+                State.LastUpdatedTotalHours = tree.GetDouble(TransientUtil.ATTR_UPDATED_HOURS);
             }
         }
 
@@ -181,12 +177,15 @@ namespace Rekindled.src
             tree.SetDouble(TransientUtil.ATTR_CURR_HOURS, State.CurrentFuelHours);
             tree.SetDouble(TransientUtil.ATTR_CURR_DEPLETION, State.CurrentDepletionMul);
             tree.SetDouble(TransientUtil.ATTR_UPDATED_HOURS, State.LastUpdatedTotalHours);
+            
         }
 
 
         // transfer state from itemStack
         public override void OnBlockPlaced(ItemStack byItemStack)
         {
+            RekindledMain.sapi.Logger.Notification("calling OnBlockPlaced");
+
             if (byItemStack == null) // placed by worldgen/already exists, just load treeattributes instead
             {
                 RekindledMain.sapi.Logger.Notification("byItemStack was null");
@@ -206,8 +205,12 @@ namespace Rekindled.src
             State = new TransientLightState(Props)
             {
                 CurrentFuelHours = attr.GetDouble(TransientUtil.ATTR_CURR_HOURS),
-                CurrentDepletionMul = attr.GetDouble(TransientUtil.ATTR_CURR_DEPLETION)
+                CurrentDepletionMul = attr.GetDouble(TransientUtil.ATTR_CURR_DEPLETION),
+                LastUpdatedTotalHours = attr.GetDouble(TransientUtil.ATTR_UPDATED_HOURS)
             };
+
+            if (Api.Side == EnumAppSide.Server)
+                Blockentity.MarkDirty();
         }
 
 
@@ -239,8 +242,12 @@ namespace Rekindled.src
         {
             base.GetBlockInfo(forPlayer, dsc);
 
+            Blockentity.MarkDirty();
             if (State == null)
+            {
+                // dsc.Append("State is null.");
                 return;
+            }
 
             dsc.Append("\nState: " + State.LightState.GetName() +
                     "\nFuel Hours Remaining: " + Math.Round(State.CurrentFuelHours, 2) +

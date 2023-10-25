@@ -13,7 +13,7 @@ using Vintagestory.API.Datastructures;
 namespace Rekindled.src
 {
     [HarmonyPatch]
-    public class GetHeldItemInfoPatch
+    public class GetInfoPatches
     {
         // Should prevent the "Burns for {0} hours when placed." line from being printed in the mouseover text
         // Since we can't call base.GetHeldItemInfo with harmony patches, just copy-paste them lmao
@@ -219,6 +219,18 @@ namespace Rekindled.src
 
 
             return false; // prevent original method from executing
+        }
+
+
+        // please for the love of all that is good and holy, stop overriding without calling behaviors
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(BELantern), "GetBlockInfo")]
+        public static void PostfixGetBlockInfo(BELantern __instance, IPlayer forPlayer, StringBuilder sb)
+        {
+            foreach (var val in __instance.Behaviors)
+            {
+                val.GetBlockInfo(forPlayer, sb);
+            }
         }
     }
 }

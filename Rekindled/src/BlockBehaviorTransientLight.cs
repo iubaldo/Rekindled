@@ -46,9 +46,6 @@ namespace Rekindled.src
         }
 
 
-        
-
-
         public void TryBlockTransition(EnumLightState toLightState, ItemSlot slot)
         {
             AssetLocation blockCode = block.CodeWithVariant("state", Enum.GetName(toLightState).ToLower());
