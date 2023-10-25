@@ -213,8 +213,7 @@ namespace Rekindled.src
                 LastUpdatedTotalHours = attr.GetDouble(TransientUtil.ATTR_UPDATED_HOURS)
             };
 
-            if (Api.Side == EnumAppSide.Server)
-                Blockentity.MarkDirty(true);
+            Blockentity.MarkDirty(true);
         }
 
 
