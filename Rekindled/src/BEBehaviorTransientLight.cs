@@ -255,13 +255,8 @@ namespace Rekindled.src
 
         public override void GetBlockInfo(IPlayer forPlayer, StringBuilder dsc)
         {
-            base.GetBlockInfo(forPlayer, dsc);
-
             if (State == null)
-            {
-                // dsc.Append("State is null.");
                 return;
-            }
 
             dsc.Append("\nState: " + State.LightState.GetName() +
                     "\nFuel Hours Remaining: " + Math.Round(State.CurrentFuelHours, 2) +

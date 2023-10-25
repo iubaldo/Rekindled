@@ -68,6 +68,11 @@ namespace Rekindled.src
             // apply harmony patches
             harmony.PatchAll();
 
+            // only do this clientside
+            if (api.Side == EnumAppSide.Server)
+                harmony.Unpatch(typeof(BELantern).GetMethod(nameof(BELantern.GetBlockInfo)), HarmonyPatchType.Postfix);
+
+            // log patched methods
             if (!harmony.GetPatchedMethods().Any())
                 Mod.Logger.Notification("No Harmony Patches were applied.");
             else
