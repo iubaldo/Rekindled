@@ -85,7 +85,7 @@ namespace Rekindled.src
                 if (hoursPassed > 0.05f)
                 {
                     double hoursPassedAdjusted = hoursPassed * currentDepletionMul;
-                    RekindledMain.sapi.Logger.Notification("Fuel: " + Math.Round(currentFuelHours, 2) + " -> " + Math.Round(currentFuelHours - hoursPassedAdjusted, 2));
+                    RekindledMain.sapi.Logger.Notification("[ItemSlot] Fuel: " + Math.Round(currentFuelHours, 2) + " -> " + Math.Round(currentFuelHours - hoursPassedAdjusted, 2));
                     currentFuelHours -= hoursPassedAdjusted;
                     attr.SetDouble(TransientUtil.ATTR_CURR_HOURS, currentFuelHours);
                 }

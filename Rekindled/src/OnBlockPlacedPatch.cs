@@ -18,8 +18,6 @@ namespace Rekindled.src
                 RekindledMain.sapi.Logger.Notification("byItemStack was null");
                 return;
             }
-            else
-                RekindledMain.sapi.Logger.Notification("not null");
 
             if (!RekindledMain.IsBlockTransientLight(byItemStack.Block))
                 return;

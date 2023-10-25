@@ -98,17 +98,18 @@ namespace Rekindled.src
             if (hoursPassed > 0.05f)
             {
                 double hoursPassedAdjusted = hoursPassed * State.CurrentDepletionMul;
-                RekindledMain.sapi.Logger.Notification("Fuel: " + Math.Round(State.CurrentFuelHours, 2) + " -> " + Math.Round(State.CurrentFuelHours - hoursPassedAdjusted, 2));
+                RekindledMain.sapi.Logger.Notification("[BE] Fuel: " + Math.Round(State.CurrentFuelHours, 2) + " -> " + Math.Round(State.CurrentFuelHours - hoursPassedAdjusted, 2));
                 State.CurrentFuelHours -= hoursPassedAdjusted;
 
                 if (State.CurrentFuelHours <= 0 && State.LightState == EnumLightState.Lit)
                 {
                     TryTransition(EnumLightState.Burnedout);
                 }
+
+                State.LastUpdatedTotalHours = Api.World.Calendar.TotalHours;
             }
 
-            State.LastUpdatedTotalHours = Api.World.Calendar.TotalHours;
-            Blockentity.MarkDirty();
+            Blockentity.MarkDirty(true);
         }
 
 
@@ -146,12 +147,13 @@ namespace Rekindled.src
             if (Props == null)
                 return;
 
-            if (State == null 
+            if (State == null
                 && tree.HasAttribute(TransientUtil.ATTR_CURR_HOURS)
                 && tree.HasAttribute(TransientUtil.ATTR_CURR_DEPLETION)
                 && tree.HasAttribute(TransientUtil.ATTR_UPDATED_HOURS))
             {
-                State = new TransientLightState(Props) { 
+                State = new TransientLightState(Props)
+                {
                     CurrentFuelHours = tree.GetDouble(TransientUtil.ATTR_CURR_HOURS),
                     CurrentDepletionMul = tree.GetDouble(TransientUtil.ATTR_CURR_DEPLETION),
                     LastUpdatedTotalHours = tree.GetDouble(TransientUtil.ATTR_UPDATED_HOURS)
@@ -174,10 +176,12 @@ namespace Rekindled.src
             if (State == null)
                 return;
 
-            tree.SetDouble(TransientUtil.ATTR_CURR_HOURS, State.CurrentFuelHours);
-            tree.SetDouble(TransientUtil.ATTR_CURR_DEPLETION, State.CurrentDepletionMul);
-            tree.SetDouble(TransientUtil.ATTR_UPDATED_HOURS, State.LastUpdatedTotalHours);
-            
+            if (Api.Side == EnumAppSide.Server)
+            {
+                tree.SetDouble(TransientUtil.ATTR_CURR_HOURS, State.CurrentFuelHours);
+                tree.SetDouble(TransientUtil.ATTR_CURR_DEPLETION, State.CurrentDepletionMul);
+                tree.SetDouble(TransientUtil.ATTR_UPDATED_HOURS, State.LastUpdatedTotalHours);
+            }
         }
 
 
@@ -210,7 +214,7 @@ namespace Rekindled.src
             };
 
             if (Api.Side == EnumAppSide.Server)
-                Blockentity.MarkDirty();
+                Blockentity.MarkDirty(true);
         }
 
 
@@ -231,9 +235,21 @@ namespace Rekindled.src
 
             foreach (BlockDropItemStack blockDrop in block.Drops)
             {
-                blockDrop.ResolvedItemstack.Attributes.SetDouble(TransientUtil.ATTR_CURR_HOURS, State.CurrentFuelHours);
-                blockDrop.ResolvedItemstack.Attributes.SetDouble(TransientUtil.ATTR_CURR_DEPLETION, State.CurrentDepletionMul);
-                blockDrop.ResolvedItemstack.Attributes.SetDouble(TransientUtil.ATTR_UPDATED_HOURS, State.LastUpdatedTotalHours);
+                ItemStack itemStack = blockDrop.ResolvedItemstack;
+                if (itemStack.Attributes == null)
+                    itemStack.Attributes = new TreeAttribute();
+
+                if (!itemStack.Attributes.HasAttribute(TransientUtil.ATTR_STATE))
+                    itemStack.Attributes[TransientUtil.ATTR_STATE] = new TreeAttribute();
+
+                ITreeAttribute attr = (ITreeAttribute)itemStack.Attributes[TransientUtil.ATTR_STATE];
+
+                if (!attr.HasAttribute(TransientUtil.ATTR_CREATED_HOURS))
+                    attr.SetDouble(TransientUtil.ATTR_CREATED_HOURS, Api.World.Calendar.TotalHours);
+
+                attr.SetDouble(TransientUtil.ATTR_CURR_HOURS, State.CurrentFuelHours);
+                attr.SetDouble(TransientUtil.ATTR_CURR_DEPLETION, State.CurrentDepletionMul);
+                attr.SetDouble(TransientUtil.ATTR_UPDATED_HOURS, State.LastUpdatedTotalHours);
             }
         }
 
@@ -242,7 +258,6 @@ namespace Rekindled.src
         {
             base.GetBlockInfo(forPlayer, dsc);
 
-            Blockentity.MarkDirty();
             if (State == null)
             {
                 // dsc.Append("State is null.");

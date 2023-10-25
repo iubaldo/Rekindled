@@ -45,6 +45,7 @@ namespace Rekindled.src
         public double LastUpdatedTotalHours;
         public double CurrentFuelHours;
         public double CurrentDepletionMul;
+        public double CreatedTotalHours;
 
 
         public TransientLightState(TransientLightProps props)
