@@ -9,12 +9,63 @@ using Vintagestory.API.Common;
 using Vintagestory.API.Client;
 using Vintagestory.API.Config;
 using Vintagestory.API.Datastructures;
+using Vintagestory.API.MathTools;
 
 namespace Rekindled.src
 {
     [HarmonyPatch]
-    public class GetInfoPatches
+    internal class RekindledHarmonyPatches
     {
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(CollectibleObject), "UpdateAndGetTransitionStatesNative")]
+        public static void PrefixUpdateAndGetTransitionStatesNative(IWorldAccessor world, ItemSlot inslot)
+        {
+            RekindledMain.UpdateTransientState(world, inslot);
+        }
+
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(BlockTorch), "OnGroundIdle")]
+        public static void PostfixOnGroundIdle(EntityItem entityItem)
+        {
+            RekindledMain.UpdateTransientState(entityItem.World, entityItem.Slot);
+        }
+
+
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(BlockLantern), "OnPickBlock")]
+        public static bool PrefixOnPickBlock(BlockLantern __instance, ref ItemStack __result, IWorldAccessor world, BlockPos pos)
+        {
+            ItemStack stack;
+            if (__instance.HasBehavior<BlockBehaviorTransientLight>())
+            {
+                var behavior = __instance.GetBehavior(typeof(BlockBehaviorTransientLight), false) as BlockBehaviorTransientLight;
+                EnumHandling enumHandling = EnumHandling.PassThrough;
+                stack = behavior.OnPickBlock(world, pos, ref enumHandling);
+            }
+            else
+                stack = new ItemStack(world.GetBlock(__instance.CodeWithParts("up")));
+
+            BELantern be = world.BlockAccessor.GetBlockEntity(pos) as BELantern;
+            if (be != null)
+            {
+                stack.Attributes.SetString("material", be.material);
+                stack.Attributes.SetString("lining", be.lining);
+                stack.Attributes.SetString("glass", be.glass);
+            }
+            else
+            {
+                stack.Attributes.SetString("material", "copper");
+                stack.Attributes.SetString("lining", "plain");
+                stack.Attributes.SetString("glass", "plain");
+            }
+
+            __result = stack;
+
+            return false; // skip original method
+        }
+
+
         // Should prevent the "Burns for {0} hours when placed." line from being printed in the mouseover text
         // Since we can't call base.GetHeldItemInfo with harmony patches, just copy-paste them lmao
         [HarmonyPrefix]
@@ -222,8 +273,6 @@ namespace Rekindled.src
         }
 
 
-
-
         // please for the love of all that is good and holy, stop overriding without calling behaviors
         [HarmonyPostfix]
         [HarmonyPatch(typeof(BELantern), "GetBlockInfo")]
@@ -232,6 +281,27 @@ namespace Rekindled.src
             foreach (var val in __instance.Behaviors)
             {
                 val.GetBlockInfo(forPlayer, sb);
+            }
+        }
+
+
+        // to whoever's out there, please stop overriding methods without calling behaviors or base I beg of you
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(BlockEntityTransient), "OnBlockPlaced")]
+        public static void PrefixOnBlockPlaced(BlockEntityTransient __instance, ItemStack byItemStack)
+        {
+            if (byItemStack == null) // placed by worldgen/already exists, just load treeattributes instead
+            {
+                RekindledMain.sapi.Logger.Notification("byItemStack was null");
+                return;
+            }
+
+            if (!RekindledMain.IsBlockTransientLight(byItemStack.Block))
+                return;
+
+            foreach (var val in __instance.Behaviors)
+            {
+                val.OnBlockPlaced(byItemStack);
             }
         }
     }
