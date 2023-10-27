@@ -290,13 +290,7 @@ namespace Rekindled.src
         [HarmonyPrefix]
         [HarmonyPatch(typeof(BlockEntityTransient), "OnBlockPlaced")]
         public static void PrefixOnBlockPlaced(BlockEntityTransient __instance, ItemStack byItemStack)
-        {
-            //if (byItemStack == null) // placed by worldgen/already exists, just load treeattributes instead
-            //{
-            //    RekindledMain.sapi.Logger.Notification("byItemStack was null");
-            //    return;
-            //}
-
+        {           
             foreach (var val in __instance.Behaviors)
             {
                 val.OnBlockPlaced(byItemStack);
@@ -321,6 +315,35 @@ namespace Rekindled.src
                 if (behavior != null)
                     behavior.SetFromItemStack(itemstack);
             }
+        }
+
+
+        // base doesn't call behavior methods
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(BlockTorch), "GetDrops")]
+        public static bool PrefixGetDrops(BlockTorch __instance, ref ItemStack[] __result, IWorldAccessor world, BlockPos pos, IPlayer byPlayer, float dropQuantityMultiplier = 1f)
+        {
+            EnumHandling handling = EnumHandling.PassThrough;
+            foreach (var behavior in __instance.BlockBehaviors)
+            {
+                ItemStack[] behaviorStack = behavior.GetDrops(world, pos, byPlayer, ref dropQuantityMultiplier, ref handling);
+                if (handling == EnumHandling.PreventDefault)
+                {
+                    __result = behaviorStack;
+                    return false;
+                }
+            }
+
+            // base method
+            ItemStack[] stack;
+            if (__instance.Variant["state"] == "burnedout") 
+                stack = new ItemStack[0];
+
+            Block block = world.BlockAccessor.GetBlock(__instance.CodeWithVariant("orientation", "up"));
+            stack = new ItemStack[] { new ItemStack(block) };
+            __result = stack;
+           
+            return false;
         }
     }
 }

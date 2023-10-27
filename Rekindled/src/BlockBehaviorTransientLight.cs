@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -87,38 +88,46 @@ namespace Rekindled.src
 
         public override ItemStack[] GetDrops(IWorldAccessor world, BlockPos pos, IPlayer byPlayer, ref float dropChanceMultiplier, ref EnumHandling handling)
         {
-            if (State == null)
+            BlockEntity be = world.BlockAccessor.GetBlockEntity(pos);
+            if (block.EntityClass != be.Block.EntityClass)
             {
-                handling = EnumHandling.PassThrough;
-                RekindledMain.sapi.Logger.Notification("getdrops state was null");
-                return null;
+                RekindledMain.sapi.Logger.Notification("entityclass mismatch");
+                return base.GetDrops(world, pos, byPlayer, ref dropChanceMultiplier, ref handling);
             }
+                
 
-            RekindledMain.sapi.Logger.Notification("calling bbehavior getdrops");
-
-            List<ItemStack> stacks = new();
-            foreach (BlockDropItemStack dstack in block.Drops)
+            var behavior = be.GetBehavior<BEBehaviorTransientLight>();
+            if (behavior == null || behavior.State == null)
             {
-                ItemStack itemStack = dstack.ResolvedItemstack;
-                if (itemStack.Attributes == null)
-                    itemStack.Attributes = new TreeAttribute();
+                RekindledMain.sapi.Logger.Notification("behavior/state null");
+                return base.GetDrops(world, pos, byPlayer, ref dropChanceMultiplier, ref handling);
+            }               
 
-                if (!itemStack.Attributes.HasAttribute(TransientUtil.ATTR_TRANSIENTSTATE))
-                    itemStack.Attributes[TransientUtil.ATTR_TRANSIENTSTATE] = new TreeAttribute();
+            State = behavior.State;
 
-                ITreeAttribute attr = (ITreeAttribute)itemStack.Attributes[TransientUtil.ATTR_TRANSIENTSTATE];
+            Block dropBlock = world.BlockAccessor.GetBlock(block.CodeWithVariant("orientation", "up"));
+            ItemStack itemStack = new(dropBlock);
+            
+            // TODO: create an initialize function for this?
+            if (itemStack.Attributes == null)
+                itemStack.Attributes = new TreeAttribute();
 
-                if (!attr.HasAttribute(TransientUtil.ATTR_CREATED_HOURS))
-                    attr.SetDouble(TransientUtil.ATTR_CREATED_HOURS, State.CreatedTotalHours);
+            if (!itemStack.Attributes.HasAttribute(TransientUtil.ATTR_TRANSIENTSTATE))
+                itemStack.Attributes[TransientUtil.ATTR_TRANSIENTSTATE] = new TreeAttribute();
 
-                attr.SetInt(TransientUtil.ATTR_TRANSIENTSTATE, (int)State.LightState);
-                attr.SetDouble(TransientUtil.ATTR_CURR_HOURS, State.CurrentFuelHours);
-                attr.SetDouble(TransientUtil.ATTR_CURR_DEPLETION, State.CurrentDepletionMul);
-                attr.SetDouble(TransientUtil.ATTR_UPDATED_HOURS, State.LastUpdatedTotalHours);
-            }
+            ITreeAttribute attr = (ITreeAttribute)itemStack.Attributes[TransientUtil.ATTR_TRANSIENTSTATE];
+
+            if (!attr.HasAttribute(TransientUtil.ATTR_CREATED_HOURS))
+                attr.SetDouble(TransientUtil.ATTR_CREATED_HOURS, State.CreatedTotalHours);
+
+            attr.SetInt(TransientUtil.ATTR_TRANSIENTSTATE, (int)State.LightState);
+            attr.SetDouble(TransientUtil.ATTR_CURR_HOURS, State.CurrentFuelHours);
+            attr.SetDouble(TransientUtil.ATTR_CURR_DEPLETION, State.CurrentDepletionMul);
+            attr.SetDouble(TransientUtil.ATTR_UPDATED_HOURS, State.LastUpdatedTotalHours);
+            
             handling = EnumHandling.PreventDefault;
 
-            return stacks.ToArray();
+            return new ItemStack[]{itemStack};
         }
 
 

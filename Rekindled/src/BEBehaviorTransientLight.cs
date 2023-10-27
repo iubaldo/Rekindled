@@ -188,25 +188,17 @@ namespace Rekindled.src
         // transfer state from itemStack
         public override void OnBlockPlaced(ItemStack byItemStack)
         {
-            RekindledMain.sapi.Logger.Notification("calling OnBlockPlaced");
             SetFromItemStack(byItemStack);
         }
 
 
         public void SetFromItemStack(ItemStack byItemStack)
         {
-            RekindledMain.sapi.Logger.Notification("setting from itemstack");
-            if (byItemStack == null) // placed by worldgen/already exists, just load treeattributes instead
-            {
-                RekindledMain.sapi.Logger.Notification("byItemStack was null");
+            if (byItemStack == null) // placed by worldgen/already exists, just load treeattributes instead          
                 return;
-            }
           
             if (!byItemStack.Attributes.HasAttribute(TransientUtil.ATTR_TRANSIENTSTATE))
-            {
-                RekindledMain.sapi.Logger.Notification("byItemStack is missing attributes");
                 return;
-            }
 
             ITreeAttribute attr = (ITreeAttribute)byItemStack.Attributes[TransientUtil.ATTR_TRANSIENTSTATE];
 
@@ -217,49 +209,42 @@ namespace Rekindled.src
         }
 
 
-        public override void OnBlockBroken(IPlayer byPlayer = null)
-        {
-            if (State != null)
-            {
-                Blockentity.Block.GetBehavior<BlockBehaviorTransientLight>().State = State;
-                SetBlockDrops();
-            }
-            else
-            {
-                RekindledMain.sapi.Logger.Notification("state is null, side is " + Enum.GetName(typeof(EnumAppSide), Api.Side));
-            }
-            
-            base.OnBlockBroken(byPlayer);
-        }
+        //public override void OnBlockBroken(IPlayer byPlayer = null)
+        //{
+        //    SetBlockDrops();
+        //    base.OnBlockBroken(byPlayer);
+        //}
 
 
-        //save the current attributes to the block drops when this block is broken
-        void SetBlockDrops()
-        {
-            if (State == null)
-                return;
+        ////save the current attributes to the block drops when this block is broken
+        //void SetBlockDrops()
+        //{
+        //    if (State == null)
+        //        return;
 
-           Block block = Blockentity.Block;
+        //   Block block = Blockentity.Block;
 
-            foreach (BlockDropItemStack blockDrop in block.Drops)
-            {
-                ItemStack itemStack = blockDrop.ResolvedItemstack;
-                if (itemStack.Attributes == null)
-                    itemStack.Attributes = new TreeAttribute();
+        //    foreach (BlockDropItemStack blockDrop in block.Drops)
+        //    {
+        //        ItemStack itemStack = blockDrop.ResolvedItemstack;
+        //        if (itemStack.Attributes == null)
+        //            itemStack.Attributes = new TreeAttribute();
 
-                if (!itemStack.Attributes.HasAttribute(TransientUtil.ATTR_TRANSIENTSTATE))
-                    itemStack.Attributes[TransientUtil.ATTR_TRANSIENTSTATE] = new TreeAttribute();
+        //        if (!itemStack.Attributes.HasAttribute(TransientUtil.ATTR_TRANSIENTSTATE))
+        //            itemStack.Attributes[TransientUtil.ATTR_TRANSIENTSTATE] = new TreeAttribute();
 
-                ITreeAttribute attr = (ITreeAttribute)itemStack.Attributes[TransientUtil.ATTR_TRANSIENTSTATE];
+        //        ITreeAttribute attr = (ITreeAttribute)itemStack.Attributes[TransientUtil.ATTR_TRANSIENTSTATE];
 
-                if (!attr.HasAttribute(TransientUtil.ATTR_CREATED_HOURS))
-                    attr.SetDouble(TransientUtil.ATTR_CREATED_HOURS, Api.World.Calendar.TotalHours);
+        //        if (!attr.HasAttribute(TransientUtil.ATTR_CREATED_HOURS))
+        //            attr.SetDouble(TransientUtil.ATTR_CREATED_HOURS, Api.World.Calendar.TotalHours);
 
-                attr.SetDouble(TransientUtil.ATTR_CURR_HOURS, State.CurrentFuelHours);
-                attr.SetDouble(TransientUtil.ATTR_CURR_DEPLETION, State.CurrentDepletionMul);
-                attr.SetDouble(TransientUtil.ATTR_UPDATED_HOURS, State.LastUpdatedTotalHours);
-            }
-        }
+        //        attr.SetDouble(TransientUtil.ATTR_CURR_HOURS, State.CurrentFuelHours);
+        //        attr.SetDouble(TransientUtil.ATTR_CURR_DEPLETION, State.CurrentDepletionMul);
+        //        attr.SetDouble(TransientUtil.ATTR_UPDATED_HOURS, State.LastUpdatedTotalHours);
+        //    }
+
+        //    RekindledMain.sapi.Logger.Notification("set block drops");
+        //}
 
 
         public override void GetBlockInfo(IPlayer forPlayer, StringBuilder dsc)
