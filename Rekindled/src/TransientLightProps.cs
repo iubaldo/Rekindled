@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Vintagestory.API.Common;
+using Vintagestory.API.Datastructures;
 using Vintagestory.API.MathTools;
 
 namespace Rekindled.src
@@ -56,6 +57,18 @@ namespace Rekindled.src
         }
 
 
+        public TransientLightState(TransientLightProps props, ITreeAttribute tree)
+        {
+            Props = props;
+
+            LightState = (EnumLightState)tree.GetInt(TransientUtil.ATTR_CURR_LIGHTSTATE);
+            LastUpdatedTotalHours = tree.GetDouble(TransientUtil.ATTR_UPDATED_HOURS);
+            CurrentFuelHours = tree.GetDouble(TransientUtil.ATTR_CURR_HOURS);
+            CurrentDepletionMul = tree.GetDouble(TransientUtil.ATTR_CURR_DEPLETION);
+            CreatedTotalHours = tree.GetDouble(TransientUtil.ATTR_CREATED_HOURS);
+        }
+
+
         public override string ToString()
         {
             return "State: " + Enum.GetName(typeof(EnumLightState), LightState) +
@@ -67,11 +80,11 @@ namespace Rekindled.src
 
     public class TransientUtil
     {
-        public const string ATTR_STATE = "transientState"; // name of the actual attribute containing the state
+        public const string ATTR_TRANSIENTSTATE = "transientState"; // name of the actual attribute containing the state
 
         public const string ATTR_CREATED_HOURS = "createdTotalHours";
         public const string ATTR_UPDATED_HOURS = "lastUpdatedTotalHours";
-        public const string ATTR_CURR_STATE = "currentLightState";
+        public const string ATTR_CURR_LIGHTSTATE = "currentLightState";
         public const string ATTR_CURR_HOURS = "currentFuelHours";
         public const string ATTR_CURR_DEPLETION = "currentDepletionMul";
     }

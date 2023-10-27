@@ -72,6 +72,12 @@ namespace Rekindled.src
             if (api.Side == EnumAppSide.Server)
                 harmony.Unpatch(typeof(BELantern).GetMethod(nameof(BELantern.GetBlockInfo)), HarmonyPatchType.Postfix);
 
+            // only do this serverside
+            if (api.Side == EnumAppSide.Server)
+            {
+                harmony.Unpatch(typeof(BlockEntityTransient).GetMethod(nameof(BlockEntityTransient.OnBlockPlaced)), HarmonyPatchType.Prefix);
+            }
+
             // log patched methods
             if (!harmony.GetPatchedMethods().Any())
                 Mod.Logger.Notification("No Harmony Patches were applied.");
@@ -160,7 +166,7 @@ namespace Rekindled.src
         }
 
 
-        public static ItemStack UpdateTransientState(IWorldAccessor world, ItemSlot inslot)
+        public static ItemStack UpdateAndGetTransientState(IWorldAccessor world, ItemSlot inslot)
         {
             if (inslot is ItemSlotCreative)
                 return null;
@@ -181,10 +187,10 @@ namespace Rekindled.src
             if (itemStack.Attributes == null)
                 itemStack.Attributes = new TreeAttribute();
 
-            if (!itemStack.Attributes.HasAttribute(TransientUtil.ATTR_STATE))
-                itemStack.Attributes[TransientUtil.ATTR_STATE] = new TreeAttribute();
+            if (!itemStack.Attributes.HasAttribute(TransientUtil.ATTR_TRANSIENTSTATE))
+                itemStack.Attributes[TransientUtil.ATTR_TRANSIENTSTATE] = new TreeAttribute();
 
-            ITreeAttribute attr = (ITreeAttribute)itemStack.Attributes[TransientUtil.ATTR_STATE];
+            ITreeAttribute attr = (ITreeAttribute)itemStack.Attributes[TransientUtil.ATTR_TRANSIENTSTATE];
 
 
             EnumLightState lightState;
@@ -201,13 +207,13 @@ namespace Rekindled.src
                 currentFuelHours = behavior.Props.MaxFuelHours;
                 currentDepletionMul = behavior.Props.BaseDepletionMul;
 
-                attr.SetInt(TransientUtil.ATTR_CURR_STATE, (int)lightState);
+                attr.SetInt(TransientUtil.ATTR_CURR_LIGHTSTATE, (int)lightState);
                 attr.SetDouble(TransientUtil.ATTR_CURR_HOURS, currentFuelHours);
                 attr.SetDouble(TransientUtil.ATTR_CURR_DEPLETION, currentDepletionMul);
             }
             else
             {
-                lightState = (EnumLightState)attr.GetInt(TransientUtil.ATTR_CURR_STATE);
+                lightState = (EnumLightState)attr.GetInt(TransientUtil.ATTR_CURR_LIGHTSTATE);
                 currentFuelHours = attr.GetDouble(TransientUtil.ATTR_CURR_HOURS);
                 currentDepletionMul = attr.GetDouble(TransientUtil.ATTR_CURR_DEPLETION);
             }
@@ -232,9 +238,9 @@ namespace Rekindled.src
                     inslot.Itemstack.SetFrom(newStack);
 
                     behavior = inslot.Itemstack.Block.GetBehavior(typeof(BlockBehaviorTransientLight), false) as BlockBehaviorTransientLight;
-                    attr = (ITreeAttribute)inslot.Itemstack.Attributes[TransientUtil.ATTR_STATE];
+                    attr = (ITreeAttribute)inslot.Itemstack.Attributes[TransientUtil.ATTR_TRANSIENTSTATE];
 
-                    attr.SetInt(TransientUtil.ATTR_CURR_STATE, (int)behavior.GetLightState());
+                    attr.SetInt(TransientUtil.ATTR_CURR_LIGHTSTATE, (int)behavior.GetLightState());
                     attr.SetInt(TransientUtil.ATTR_CURR_HOURS, 0);
 
                     transitionStack = inslot.Itemstack;

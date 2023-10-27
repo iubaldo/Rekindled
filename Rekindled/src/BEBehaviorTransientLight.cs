@@ -189,29 +189,29 @@ namespace Rekindled.src
         public override void OnBlockPlaced(ItemStack byItemStack)
         {
             RekindledMain.sapi.Logger.Notification("calling OnBlockPlaced");
+            SetFromItemStack(byItemStack);
+        }
 
+
+        public void SetFromItemStack(ItemStack byItemStack)
+        {
+            RekindledMain.sapi.Logger.Notification("setting from itemstack");
             if (byItemStack == null) // placed by worldgen/already exists, just load treeattributes instead
             {
                 RekindledMain.sapi.Logger.Notification("byItemStack was null");
                 return;
-            } 
-
-            if (!byItemStack.Attributes.HasAttribute(TransientUtil.ATTR_STATE))
-                return;
-
-            ITreeAttribute attr = (ITreeAttribute)byItemStack.Attributes[TransientUtil.ATTR_STATE];
-            TransientLightProps lightProps = RekindledMain.ResolvePropsFromBlock(byItemStack.Block);
-
-            if (lightProps == null)
-                return;
-
-            Props = lightProps;
-            State = new TransientLightState(Props)
+            }
+          
+            if (!byItemStack.Attributes.HasAttribute(TransientUtil.ATTR_TRANSIENTSTATE))
             {
-                CurrentFuelHours = attr.GetDouble(TransientUtil.ATTR_CURR_HOURS),
-                CurrentDepletionMul = attr.GetDouble(TransientUtil.ATTR_CURR_DEPLETION),
-                LastUpdatedTotalHours = attr.GetDouble(TransientUtil.ATTR_UPDATED_HOURS)
-            };
+                RekindledMain.sapi.Logger.Notification("byItemStack is missing attributes");
+                return;
+            }
+
+            ITreeAttribute attr = (ITreeAttribute)byItemStack.Attributes[TransientUtil.ATTR_TRANSIENTSTATE];
+
+            Props = RekindledMain.ResolvePropsFromBlock(Blockentity.Block);
+            State = new TransientLightState(Props, attr);
 
             Blockentity.MarkDirty(true);
         }
@@ -219,8 +219,16 @@ namespace Rekindled.src
 
         public override void OnBlockBroken(IPlayer byPlayer = null)
         {
-            Blockentity.Block.GetBehavior<BlockBehaviorTransientLight>().State = State;
-            SetBlockDrops();
+            if (State != null)
+            {
+                Blockentity.Block.GetBehavior<BlockBehaviorTransientLight>().State = State;
+                SetBlockDrops();
+            }
+            else
+            {
+                RekindledMain.sapi.Logger.Notification("state is null, side is " + Enum.GetName(typeof(EnumAppSide), Api.Side));
+            }
+            
             base.OnBlockBroken(byPlayer);
         }
 
@@ -239,10 +247,10 @@ namespace Rekindled.src
                 if (itemStack.Attributes == null)
                     itemStack.Attributes = new TreeAttribute();
 
-                if (!itemStack.Attributes.HasAttribute(TransientUtil.ATTR_STATE))
-                    itemStack.Attributes[TransientUtil.ATTR_STATE] = new TreeAttribute();
+                if (!itemStack.Attributes.HasAttribute(TransientUtil.ATTR_TRANSIENTSTATE))
+                    itemStack.Attributes[TransientUtil.ATTR_TRANSIENTSTATE] = new TreeAttribute();
 
-                ITreeAttribute attr = (ITreeAttribute)itemStack.Attributes[TransientUtil.ATTR_STATE];
+                ITreeAttribute attr = (ITreeAttribute)itemStack.Attributes[TransientUtil.ATTR_TRANSIENTSTATE];
 
                 if (!attr.HasAttribute(TransientUtil.ATTR_CREATED_HOURS))
                     attr.SetDouble(TransientUtil.ATTR_CREATED_HOURS, Api.World.Calendar.TotalHours);
@@ -257,11 +265,14 @@ namespace Rekindled.src
         public override void GetBlockInfo(IPlayer forPlayer, StringBuilder dsc)
         {
             if (State == null)
+            {
+                dsc.AppendLine("State is null.");
                 return;
+            } 
 
-            dsc.Append("\nState: " + State.LightState.GetName() +
+            dsc.AppendLine("State: " + State.LightState.GetName() +
                     "\nFuel Hours Remaining: " + Math.Round(State.CurrentFuelHours, 2) +
-                    "\nCurrent Depletion Multiplier: x" + Math.Round(State.CurrentDepletionMul, 2));
+                    "\nCurrent Depletion Multiplier: x" + Math.Round(State.CurrentDepletionMul, 2) + "\n");
         }
     }
 }

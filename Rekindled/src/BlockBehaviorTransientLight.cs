@@ -103,15 +103,15 @@ namespace Rekindled.src
                 if (itemStack.Attributes == null)
                     itemStack.Attributes = new TreeAttribute();
 
-                if (!itemStack.Attributes.HasAttribute(TransientUtil.ATTR_STATE))
-                    itemStack.Attributes[TransientUtil.ATTR_STATE] = new TreeAttribute();
+                if (!itemStack.Attributes.HasAttribute(TransientUtil.ATTR_TRANSIENTSTATE))
+                    itemStack.Attributes[TransientUtil.ATTR_TRANSIENTSTATE] = new TreeAttribute();
 
-                ITreeAttribute attr = (ITreeAttribute)itemStack.Attributes[TransientUtil.ATTR_STATE];
+                ITreeAttribute attr = (ITreeAttribute)itemStack.Attributes[TransientUtil.ATTR_TRANSIENTSTATE];
 
                 if (!attr.HasAttribute(TransientUtil.ATTR_CREATED_HOURS))
                     attr.SetDouble(TransientUtil.ATTR_CREATED_HOURS, State.CreatedTotalHours);
 
-                attr.SetInt(TransientUtil.ATTR_STATE, (int)State.LightState);
+                attr.SetInt(TransientUtil.ATTR_TRANSIENTSTATE, (int)State.LightState);
                 attr.SetDouble(TransientUtil.ATTR_CURR_HOURS, State.CurrentFuelHours);
                 attr.SetDouble(TransientUtil.ATTR_CURR_DEPLETION, State.CurrentDepletionMul);
                 attr.SetDouble(TransientUtil.ATTR_UPDATED_HOURS, State.LastUpdatedTotalHours);
@@ -136,15 +136,15 @@ namespace Rekindled.src
             if (itemStack.Attributes == null)
                 itemStack.Attributes = new TreeAttribute();
 
-            if (!itemStack.Attributes.HasAttribute(TransientUtil.ATTR_STATE))
-                itemStack.Attributes[TransientUtil.ATTR_STATE] = new TreeAttribute();
+            if (!itemStack.Attributes.HasAttribute(TransientUtil.ATTR_TRANSIENTSTATE))
+                itemStack.Attributes[TransientUtil.ATTR_TRANSIENTSTATE] = new TreeAttribute();
 
-            ITreeAttribute attr = (ITreeAttribute)itemStack.Attributes[TransientUtil.ATTR_STATE];
+            ITreeAttribute attr = (ITreeAttribute)itemStack.Attributes[TransientUtil.ATTR_TRANSIENTSTATE];
 
             if (!attr.HasAttribute(TransientUtil.ATTR_CREATED_HOURS))
                 attr.SetDouble(TransientUtil.ATTR_CREATED_HOURS, State.CreatedTotalHours);
 
-            attr.SetInt(TransientUtil.ATTR_STATE, (int)State.LightState);
+            attr.SetInt(TransientUtil.ATTR_TRANSIENTSTATE, (int)State.LightState);
             attr.SetDouble(TransientUtil.ATTR_CURR_HOURS, State.CurrentFuelHours);
             attr.SetDouble(TransientUtil.ATTR_CURR_DEPLETION, State.CurrentDepletionMul);
             attr.SetDouble(TransientUtil.ATTR_UPDATED_HOURS, State.LastUpdatedTotalHours);
