@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Vintagestory.API.Common;
 
 namespace Rekindled.src
 {
@@ -24,5 +25,8 @@ namespace Rekindled.src
             Enum.TryParse(behavior.block.Variant["state"], true, out EnumLightState lightState);
             return lightState;
         }
+
+
+        public static bool IsValidFuelItem(this TransientLightProps props, CollectibleObject obj) => props.FuelItems.Contains(obj.Code.ToString());
     }
 }

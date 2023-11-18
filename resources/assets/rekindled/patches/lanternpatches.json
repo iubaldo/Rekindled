@@ -6,7 +6,8 @@
     "value": {
       "transientLightProps": {
         "maxFuelHours": 256,
-        "baseDepletionMul": 1
+        "baseDepletionMul": 1,
+        "FuelItems": [ "game:fat" ]
       }
     }
   }

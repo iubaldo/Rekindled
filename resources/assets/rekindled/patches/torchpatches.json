@@ -51,7 +51,7 @@
 		"path": "/attributes/transientLightPropsbyType",
 		"value": {
 			"*-crude-*": {
-				"maxFuelHours": 24,
+				"maxFuelHours": 48,
 				"baseDepletionMul": 1
 			},
 			"*-basic-*": {

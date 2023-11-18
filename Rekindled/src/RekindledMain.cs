@@ -20,10 +20,7 @@ namespace Rekindled.src
     /*
      * TODO:
      * 
-     * edit light source info to read:
-     *  State: lightState
-     *  Fuel: x%
-     *  Time Remaining: x time (copy syntax of food spoilage)
+     * Adjust lang file to use {0} placeholder text for showing max fuel
      *  
      * patch-add appropriate light sources with state + variants
      *  change recipes to default craft as unlit
@@ -37,10 +34,20 @@ namespace Rekindled.src
      * see if it's possible to combine and average fuel time for extinguished light sources
      *  similar to how decay works on food
      * 
-     * ticking fuel
-     *  inventory
-     *  placed
-     *  dropped itementity
+     * interactions
+     *  add fuel
+     *      look at quern, right click with item to insert, right click when empty to grind
+     *  extinguish
+     *      convert to extinguished form
+     *  light
+     *      look at other mod that lets torches light other torches
+     *      also recipe to convert sources to lit via crafting
+     *  
+     *  new firestarters
+     *  
+     *  fix extinguish transitions for rain/submerge
+     *  
+     *  reduce depletion mul if not in hand/hotbar
      */
 
 
@@ -64,6 +71,7 @@ namespace Rekindled.src
             api.RegisterBlockBehaviorClass("blockbehaviortransientlight", typeof(BlockBehaviorTransientLight));
             api.RegisterBlockEntityBehaviorClass("bebehaviortransientlight", typeof(BEBehaviorTransientLight));
             api.RegisterCollectibleBehaviorClass("collectibleBehaviorTLDescription", typeof(CollectibleBehaviorTLDescription));
+            api.RegisterCollectibleBehaviorClass("collectibleBehaviorFuelItem", typeof(CollectibleBehaviorFuelItem));
 
             // apply harmony patches
             harmony.PatchAll();
@@ -139,14 +147,14 @@ namespace Rekindled.src
                 }
             }
 
-            //foreach (Item item in api.World.Items) // TODO: apply behaviors to item transient lights
-            //{
-            //    if (item.Code == null)
-            //        continue;
+            foreach (Item item in api.World.Items) // TODO: apply behaviors to item transient lights
+            {
+                if (item.Code == null)
+                    continue;
 
-            //    if (item.Code.FirstPathPart == "candle")
-            //        // add behavior to item
-            //}
+                if (item.Code.Path == "fat")
+                    item.CollectibleBehaviors = item.CollectibleBehaviors.Append(new CollectibleBehaviorFuelItem(item));
+            }
         }
 
 
@@ -438,7 +446,7 @@ namespace Rekindled.src
         }
 
 
-        bool IsSlotTransientLight(ItemSlot slot)
+        public static bool IsSlotTransientLight(ItemSlot slot)
         {
             Block block = slot.Itemstack.Block;
             if (block == null)

@@ -1,0 +1,13 @@
+[
+  {
+    "file": "game:blocktypes/mclay/oillamp.json",
+    "op": "add",
+    "path": "/attributes",
+    "value": {
+      "transientLightProps": {
+        "maxFuelHours": 96,
+        "baseDepletionMul": 1
+      }
+    }
+  }
+]
