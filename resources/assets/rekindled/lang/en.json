@@ -34,4 +34,6 @@
 	"game:blockdesc-torch-cloth-extinct-*": "A long-lasting, extinguished torch that burns for up to 4 real-time hours.",
 	"game:block-torch-cloth-burnedout-*": "Cloth Torch (Burned Out)",
 	"game:blockdesc-torch-cloth-burnedout-*": "A long-lasting, burned out torch that will no longer light."
+
+
 }

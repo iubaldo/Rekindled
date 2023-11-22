@@ -33,6 +33,7 @@ namespace Rekindled.src
      * 
      * see if it's possible to combine and average fuel time for extinguished light sources
      *  similar to how decay works on food
+     *  don't have to atm since extinct variant has stack size of 1, but it makes it a pain to carry multiple extinct
      * 
      * interactions
      *  add fuel
