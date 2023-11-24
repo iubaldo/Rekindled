@@ -33,7 +33,15 @@
 	"game:block-torch-cloth-extinct-*": "Cloth Torch (Extinguished)",
 	"game:blockdesc-torch-cloth-extinct-*": "A long-lasting, extinguished torch that burns for up to 4 real-time hours.",
 	"game:block-torch-cloth-burnedout-*": "Cloth Torch (Burned Out)",
-	"game:blockdesc-torch-cloth-burnedout-*": "A long-lasting, burned out torch that will no longer light."
+	"game:blockdesc-torch-cloth-burnedout-*": "A long-lasting, burned out torch that will no longer light.",
 
+	"block-oillamp2-lit-*": "Oil Lamp (Lit)",
+	"block-oillamp2-unlit-*": "Oil Lamp (Unlit)",
+	"block-oillamp2-extinct-*": "Oil Lamp (Extinguished)",
+	"block-oillamp2-burnedout-*": "Oil Lamp (Burned Out)",
 
+	"blockdesc-oillamp2-lit-*": "An oil lamp that burns for up to 4 in-game days. Can be refueled with Animal Fat.",
+	"blockdesc-oillamp2-unlit-*": "Oil Lamp (Unlit)",
+	"blockdesc-oillamp2-extinct-*": "Oil Lamp (Extinguished)",
+	"blockdesc-oillamp2-burnedout-*": "Oil Lamp (Burned Out)"
 }

@@ -49,6 +49,10 @@ namespace Rekindled.src
      *  fix extinguish transitions for rain/submerge
      *  
      *  reduce depletion mul if not in hand/hotbar
+     *  
+     *  fix lang files to use properties in block descriptions
+     *      fuel time
+     *      fuel items
      */
 
 
@@ -166,7 +170,8 @@ namespace Rekindled.src
                 || block.Code.Path.Contains("torch-cloth")
                 || block.Code.FirstCodePart() == "bunchocandles"
                 || block.Code.FirstCodePart() == "lantern"
-                || block.Code.FirstCodePart() == "oillamp")
+                || block.Code.FirstCodePart() == "oillamp"
+                || block.Code.FirstCodePart() == "oillamp2") // TODO: remove when oillamp patch is working
                 return true;
             else if (block.Code.SecondCodePart() == "torchholder" && block.Code.Path.Contains("filled"))
                 return true;

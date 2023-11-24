@@ -231,7 +231,7 @@ namespace Rekindled.src
 
             if (__instance.Code != null && __instance.Code.Domain != "game")
             {
-                Mod mod = inSlot.Inventory.Api.ModLoader.GetMod(__instance.Code.Domain);
+                Mod mod = world.Api.ModLoader.GetMod(__instance.Code.Domain); // original: inslot.inventory.api
                 dsc.AppendLine(Lang.Get("Mod: {0}", mod?.Info.Name ?? __instance.Code.Domain));
             }
 
