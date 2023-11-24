@@ -1,6 +1,6 @@
 [
   {
-    "file": "game:blocktypes/mclay/oillamp.json",
+    "file": "game:blocktypes/clay/oillamp.json",
     "op": "add",
     "path": "/attributes",
     "value": {
