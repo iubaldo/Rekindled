@@ -1,17 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 
 using Vintagestory.API.Common;
-using Vintagestory.API.Common.Entities;
-using Vintagestory.API.MathTools;
 using Vintagestory.API.Datastructures;
-using Vintagestory.API.Client;
-using Vintagestory.API.Server;
-using Vintagestory.GameContent;
-using Vintagestory.API.Util;
 
 namespace Rekindled.src
 {
@@ -188,6 +179,7 @@ namespace Rekindled.src
         // transfer state from itemStack
         public override void OnBlockPlaced(ItemStack byItemStack)
         {
+            RekindledMain.sapi.Logger.Notification("placed transient light of type: " + Blockentity.Block.Code.Path);
             SetFromItemStack(byItemStack);
         }
 

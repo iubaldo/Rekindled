@@ -1,12 +1,9 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 
 using Vintagestory.API.Common;
 using Vintagestory.API.Common.Entities;
-using Vintagestory.API.MathTools;
 using Vintagestory.API.Datastructures;
 using Vintagestory.API.Client;
 using Vintagestory.API.Server;
@@ -68,6 +65,7 @@ namespace Rekindled.src
             System.Diagnostics.Debug.WriteLine("Loading Rekindled...");
 
             // register behaviors
+            api.RegisterBlockEntityClass("blockentitymock", typeof(BlockEntityMock));
             api.RegisterBlockBehaviorClass("blockbehaviortransientlight", typeof(BlockBehaviorTransientLight));
             api.RegisterBlockEntityBehaviorClass("bebehaviortransientlight", typeof(BEBehaviorTransientLight));
             api.RegisterCollectibleBehaviorClass("collectibleBehaviorTLDescription", typeof(CollectibleBehaviorTLDescription));
@@ -144,6 +142,8 @@ namespace Rekindled.src
                         properties = null
                     };
                     block.BlockEntityBehaviors = block.BlockEntityBehaviors.Append(bebehavior);
+                    if (block.Code.FirstCodePart() == "oillamp2")
+                        continue;
                 }
             }
 
@@ -165,7 +165,8 @@ namespace Rekindled.src
                 || block.Code.Path.Contains("torch-cloth")
                 || block.Code.FirstCodePart() == "bunchocandles"
                 || block.Code.FirstCodePart() == "lantern"
-                || block.Code.FirstCodePart() == "oillamp")
+                || block.Code.FirstCodePart() == "oillamp"
+                || block.Code.FirstCodePart() == "oillamp2")
                 return true;
             else if (block.Code.SecondCodePart() == "torchholder" && block.Code.Path.Contains("filled"))
                 return true;
@@ -317,8 +318,13 @@ namespace Rekindled.src
                     .WithArgs(parsers.WordRange("attribute",
                                                 "createdTotalHours", "lastUpdatedTotalHours", "currentLightState", "currentFuelHours", "currentDepletionMul"),
                               parsers.Double("value"))
-                    .WithDescription("adjust the transientState attributes of a transientlight object in hand")
+                    .WithDescription("Adjust the transientState attributes of a transientlight object in hand, if any.")
                     .HandleWith(OnCmdSetAttr)
+                .EndSubCommand()
+
+                .BeginSubCommand("getBEState")
+                    .WithDescription("Displays the state of the currently selected blockentity, if it is a transient light.")
+                    .HandleWith(OnCmdGetBEState)
                 .EndSubCommand()
                 ;
         }
@@ -425,6 +431,23 @@ namespace Rekindled.src
                     attr.SetDouble(attributeName, value); break;
             }
             slot.MarkDirty();
+
+            return TextCommandResult.Success();
+        }
+
+
+        TextCommandResult OnCmdGetBEState(TextCommandCallingArgs args)
+        {
+            BlockSelection blockSel = args.Caller.Player.CurrentBlockSelection;
+            if (blockSel == null)
+                return TextCommandResult.Error("Error, not currently selecting a block");
+
+            BlockEntity be = args.Caller.Player.Entity.World.BlockAccessor.GetBlockEntity(blockSel.Position);
+
+            if (be.GetBehavior<BEBehaviorTransientLight>() == null)
+                return TextCommandResult.Error("Error, selected block is not a transient light");
+
+            sapi.Logger.Notification(be.GetBehavior<BEBehaviorTransientLight>().State.ToString());
 
             return TextCommandResult.Success();
         }
