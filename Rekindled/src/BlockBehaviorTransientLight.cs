@@ -134,7 +134,7 @@ namespace Rekindled.src
             attr.SetDouble(TransientUtil.ATTR_CURR_DEPLETION, State.CurrentDepletionMul);
             attr.SetDouble(TransientUtil.ATTR_UPDATED_HOURS, State.LastUpdatedTotalHours);
             
-            handling = EnumHandling.Handled;
+            handling = EnumHandling.PreventSubsequent;
 
             return new ItemStack[]{itemStack};
         }

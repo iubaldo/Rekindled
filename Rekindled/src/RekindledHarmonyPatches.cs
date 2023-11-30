@@ -10,6 +10,8 @@ using Vintagestory.API.Client;
 using Vintagestory.API.Config;
 using Vintagestory.API.Datastructures;
 using Vintagestory.API.MathTools;
+using Vintagestory.API.Util;
+using System.Reflection.Metadata;
 
 namespace Rekindled.src
 {
@@ -325,25 +327,25 @@ namespace Rekindled.src
         public static bool PrefixOnPickBlockBGASA(BlockGroundAndSideAttachable __instance, ref ItemStack __result, IWorldAccessor world, BlockPos pos)
         {
             // base method
-            EnumHandling handled = EnumHandling.PassThrough;
+            EnumHandling handling = EnumHandling.PassThrough;
             ItemStack stack = null;
 
             foreach (BlockBehavior behavior in __instance.BlockBehaviors)
             {
-                EnumHandling bhHandled = EnumHandling.PassThrough;
-                ItemStack bhstack = behavior.OnPickBlock(world, pos, ref bhHandled);
+                EnumHandling behaviorHandling = EnumHandling.PassThrough;
+                ItemStack bhstack = behavior.OnPickBlock(world, pos, ref behaviorHandling);
 
-                if (bhHandled != EnumHandling.PassThrough)
+                if (behaviorHandling != EnumHandling.PassThrough)
                 {
                     stack = bhstack;
-                    handled = bhHandled;
+                    handling = behaviorHandling;
                 }
 
-                if (handled == EnumHandling.PreventSubsequent) 
+                if (handling == EnumHandling.PreventSubsequent) 
                     break;
             }
 
-            if (handled == EnumHandling.PassThrough || handled == EnumHandling.Handled) // do default behavior -> original method
+            if (handling == EnumHandling.PassThrough || handling == EnumHandling.Handled) // do default behavior -> original method
             {
                 Block toReturn = world.BlockAccessor.GetBlock(__instance.CodeWithVariant("orientation", "up"));
                 stack = new ItemStack(toReturn);
@@ -362,24 +364,35 @@ namespace Rekindled.src
         public static bool PrefixGetDrops(BlockTorch __instance, ref ItemStack[] __result, IWorldAccessor world, BlockPos pos, IPlayer byPlayer, float dropQuantityMultiplier = 1f)
         {
             EnumHandling handling = EnumHandling.PassThrough;
+            List<ItemStack> dropStacks = new();
+
             foreach (var behavior in __instance.BlockBehaviors)
             {
-                ItemStack[] behaviorStack = behavior.GetDrops(world, pos, byPlayer, ref dropQuantityMultiplier, ref handling);
-                if (handling == EnumHandling.PreventDefault)
+                EnumHandling behaviorHandling = EnumHandling.PassThrough;
+                ItemStack[] behaviorStacks = behavior.GetDrops(world, pos, byPlayer, ref dropQuantityMultiplier, ref behaviorHandling);
+
+                if (behaviorHandling != EnumHandling.PassThrough && behaviorStacks != null)
                 {
-                    __result = behaviorStack;
-                    return false;
+                    dropStacks.AddRange(behaviorStacks);
+                    handling = behaviorHandling;
                 }
+
+                if (handling == EnumHandling.PreventSubsequent)
+                    break;
             }
 
-            // base method
-            ItemStack[] stack;
-            if (__instance.Variant["state"] == "burnedout") 
-                stack = new ItemStack[0];
-
-            Block block = world.BlockAccessor.GetBlock(__instance.CodeWithVariant("orientation", "up"));
-            stack = new ItemStack[] { new ItemStack(block) };
-            __result = stack;
+            if (handling == EnumHandling.PassThrough || handling == EnumHandling.Handled) // do default behavior -> original method
+            {
+                if (__instance.Variant["state"] == "burnedout")
+                    __result = Array.Empty<ItemStack>();
+                else
+                {
+                    Block block = world.BlockAccessor.GetBlock(__instance.CodeWithVariant("orientation", "up"));
+                    dropStacks = new List<ItemStack> { new ItemStack(block) };
+                }
+            } 
+            
+            __result = dropStacks.ToArray();
            
             // skip original method
             return false;
