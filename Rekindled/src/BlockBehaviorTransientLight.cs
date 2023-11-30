@@ -142,7 +142,19 @@ namespace Rekindled.src
 
         public override ItemStack OnPickBlock(IWorldAccessor world, BlockPos pos, ref EnumHandling handling)
         {
-            if (State == null)
+            BlockEntity be = world.BlockAccessor.GetBlockEntity(pos);
+
+            if (be == null || be.GetBehavior<BEBehaviorTransientLight>() == null)
+            {
+                handling = EnumHandling.PassThrough;
+                return base.OnPickBlock(world, pos, ref handling);
+            }
+
+            BEBehaviorTransientLight bebehavior = be.GetBehavior<BEBehaviorTransientLight>();
+
+            TransientLightState beState = bebehavior.State;
+
+            if (beState == null)
             {
                 handling = EnumHandling.PassThrough;
                 return base.OnPickBlock(world, pos, ref handling);
@@ -160,12 +172,12 @@ namespace Rekindled.src
             ITreeAttribute attr = (ITreeAttribute)itemStack.Attributes[TransientUtil.ATTR_TRANSIENTSTATE];
 
             if (!attr.HasAttribute(TransientUtil.ATTR_CREATED_HOURS))
-                attr.SetDouble(TransientUtil.ATTR_CREATED_HOURS, State.CreatedTotalHours);
+                attr.SetDouble(TransientUtil.ATTR_CREATED_HOURS, beState.CreatedTotalHours);
 
-            attr.SetInt(TransientUtil.ATTR_TRANSIENTSTATE, (int)State.LightState);
-            attr.SetDouble(TransientUtil.ATTR_CURR_HOURS, State.CurrentFuelHours);
-            attr.SetDouble(TransientUtil.ATTR_CURR_DEPLETION, State.CurrentDepletionMul);
-            attr.SetDouble(TransientUtil.ATTR_UPDATED_HOURS, State.LastUpdatedTotalHours);
+            attr.SetInt(TransientUtil.ATTR_TRANSIENTSTATE, (int)beState.LightState);
+            attr.SetDouble(TransientUtil.ATTR_CURR_HOURS, beState.CurrentFuelHours);
+            attr.SetDouble(TransientUtil.ATTR_CURR_DEPLETION, beState.CurrentDepletionMul);
+            attr.SetDouble(TransientUtil.ATTR_UPDATED_HOURS, beState.LastUpdatedTotalHours);
             
             handling = EnumHandling.PreventSubsequent;
             return itemStack;

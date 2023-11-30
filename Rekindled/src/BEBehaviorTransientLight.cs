@@ -156,6 +156,8 @@ namespace Rekindled.src
                 State.CurrentFuelHours = tree.GetDouble(TransientUtil.ATTR_CURR_HOURS);
                 State.CurrentDepletionMul = tree.GetDouble(TransientUtil.ATTR_CURR_DEPLETION);
                 State.LastUpdatedTotalHours = tree.GetDouble(TransientUtil.ATTR_UPDATED_HOURS);
+
+                // Blockentity.Block.GetBehavior<BlockBehaviorTransientLight>().State = State;
             }
         }
 
