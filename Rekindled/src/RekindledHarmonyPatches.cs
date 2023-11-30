@@ -240,6 +240,7 @@ namespace Rekindled.src
         }
 
 
+        // base doesn't call behavior methods
         [HarmonyPrefix]
         [HarmonyPatch(typeof(BlockLantern), "OnPickBlock")]
         public static bool PrefixOnPickBlock(BlockLantern __instance, ref ItemStack __result, IWorldAccessor world, BlockPos pos)
@@ -298,6 +299,7 @@ namespace Rekindled.src
         }
 
 
+        // workaround for setting treeattributes from itemstack to placed blockentity
         [HarmonyPostfix]
         [HarmonyPatch(typeof(BlockGroundAndSideAttachable), "TryPlaceBlock")]
         public static void PostfixTryPlaceBlock(BlockGroundAndSideAttachable __instance, ref bool __result, IWorldAccessor world, IPlayer byPlayer, ItemStack itemstack, BlockSelection blockSel, ref string failureCode)
@@ -315,6 +317,42 @@ namespace Rekindled.src
                 if (behavior != null)
                     behavior.SetFromItemStack(itemstack);
             }
+        }
+
+
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(BlockGroundAndSideAttachable), "OnPickBlock")]
+        public static bool PrefixOnPickBlockBGASA(BlockGroundAndSideAttachable __instance, ref ItemStack __result, IWorldAccessor world, BlockPos pos)
+        {
+            // base method
+            EnumHandling handled = EnumHandling.PassThrough;
+            ItemStack stack = null;
+
+            foreach (BlockBehavior behavior in __instance.BlockBehaviors)
+            {
+                EnumHandling bhHandled = EnumHandling.PassThrough;
+                ItemStack bhstack = behavior.OnPickBlock(world, pos, ref bhHandled);
+
+                if (bhHandled != EnumHandling.PassThrough)
+                {
+                    stack = bhstack;
+                    handled = bhHandled;
+                }
+
+                if (handled == EnumHandling.PreventSubsequent) 
+                    break;
+            }
+
+            if (handled == EnumHandling.PassThrough || handled == EnumHandling.Handled) // do default behavior -> original method
+            {
+                Block toReturn = world.BlockAccessor.GetBlock(__instance.CodeWithVariant("orientation", "up"));
+                stack = new ItemStack(toReturn);
+            }
+            
+            __result = stack;
+
+            // skip original method
+            return false;
         }
 
 
@@ -343,6 +381,7 @@ namespace Rekindled.src
             stack = new ItemStack[] { new ItemStack(block) };
             __result = stack;
            
+            // skip original method
             return false;
         }
     }

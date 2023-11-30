@@ -4,6 +4,7 @@ using System.Text;
 using Vintagestory.API.Common;
 using Vintagestory.API.Datastructures;
 using Vintagestory.API.MathTools;
+using Vintagestory.GameContent;
 
 namespace Rekindled.src
 {
@@ -102,7 +103,18 @@ namespace Rekindled.src
 
             State = behavior.State;
 
-            Block dropBlock = world.BlockAccessor.GetBlock(block.CodeWithVariant("orientation", "up"));
+
+            Block dropBlock;
+            switch (block.Code.FirstCodePart()) 
+            {
+                case "torch":
+                    dropBlock = world.BlockAccessor.GetBlock(block.CodeWithVariant("orientation", "up"));
+                    break;
+                default:
+                    dropBlock = block; 
+                    break;
+            }
+
             ItemStack itemStack = new(dropBlock);
             
             // TODO: create an initialize function for this?
@@ -122,7 +134,7 @@ namespace Rekindled.src
             attr.SetDouble(TransientUtil.ATTR_CURR_DEPLETION, State.CurrentDepletionMul);
             attr.SetDouble(TransientUtil.ATTR_UPDATED_HOURS, State.LastUpdatedTotalHours);
             
-            handling = EnumHandling.PreventDefault;
+            handling = EnumHandling.Handled;
 
             return new ItemStack[]{itemStack};
         }
@@ -136,7 +148,7 @@ namespace Rekindled.src
                 return base.OnPickBlock(world, pos, ref handling);
             }
 
-            RekindledMain.sapi.Logger.Notification("calling bbehavior onpickblock");
+            // RekindledMain.sapi.Logger.Notification("calling bbehavior onpickblock");
           
             ItemStack itemStack = new ItemStack(block);
             if (itemStack.Attributes == null)
@@ -155,7 +167,7 @@ namespace Rekindled.src
             attr.SetDouble(TransientUtil.ATTR_CURR_DEPLETION, State.CurrentDepletionMul);
             attr.SetDouble(TransientUtil.ATTR_UPDATED_HOURS, State.LastUpdatedTotalHours);
             
-            handling = EnumHandling.Handled;
+            handling = EnumHandling.PreventSubsequent;
             return itemStack;
         }
     }

@@ -76,7 +76,9 @@ namespace Rekindled.src
 
             // only do this clientside
             if (api.Side == EnumAppSide.Server)
+            {
                 harmony.Unpatch(typeof(BELantern).GetMethod(nameof(BELantern.GetBlockInfo)), HarmonyPatchType.Postfix);
+            }
 
             // only do this serverside
             if (api.Side == EnumAppSide.Server)
@@ -431,6 +433,8 @@ namespace Rekindled.src
                     attr.SetDouble(attributeName, value); break;
             }
             slot.MarkDirty();
+
+            Mod.Logger.Notification("Set attribute " + attributeName + " to " + value);
 
             return TextCommandResult.Success();
         }
