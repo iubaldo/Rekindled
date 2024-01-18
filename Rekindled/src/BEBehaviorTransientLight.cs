@@ -250,7 +250,7 @@ namespace Rekindled.src
             } 
 
             dsc.AppendLine("State: " + State.LightState.GetName() +
-                    "\nFuel Hours Remaining: " + Math.Round(State.CurrentFuelHours, 2) + " (" + Math.Round(State.CurrentFuelHours / Props.MaxFuelHours * 100.0, 2) + "%)" +
+                    "\nFuel Hours Remaining: " + Math.Round(State.CurrentFuelHours, 2) + "/" + Math.Round(Props.MaxFuelHours, 2) + " (" + Math.Round(State.CurrentFuelHours / Props.MaxFuelHours * 100.0, 2) + "%)" +
                     "\nCurrent Depletion Multiplier: x" + Math.Round(State.CurrentDepletionMul, 2) + "\n");
         }
     }

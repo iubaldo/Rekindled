@@ -28,23 +28,44 @@ namespace Rekindled.src
      *      wax candle
      *      vegetable oil (expandedfoods compat)
      * 
-     * see if it's possible to combine and average fuel time for extinguished light sources
-     *  similar to how decay works on food
-     * 
      * interactions
      *  add fuel
-     *      look at quern, right click with item to insert, right click when empty to grind
+     *      use quern as an example, right click with item to insert, right click when empty to grind
      *  extinguish
      *      convert to extinguished form
      *  light
-     *      look at other mod that lets torches light other torches
-     *      also recipe to convert sources to lit via crafting
-     *  
-     *  new firestarters
-     *  
+     *      this is vanilla now, just make sure to reproduce functionality on other light sources
+     *      
+     *  crafting
+     *      relevant recipes should produce unlit sources
+     *      refuel items/stacks via crafting
+     *          should require more fuel the more are in the stack, otherwise one item could refuel multiple sources
+     *      
      *  fix extinguish transitions for rain/submerge
+     *      also extinguish all lit sources in inventory when player is submerged
      *  
      *  reduce depletion mul if not in hand/hotbar
+     *  player emit light while a lit source is in inventory
+     *  
+     *  
+     *      
+     * After 1.0 release:
+     *  new lights sources
+     *      rushlights
+     *      alternate fuel lamps/lanterns
+     *  new firestarters + related items
+     *      bow drill
+     *      pump drill
+     *  endgame items
+     *      temporal sensor
+     *      temporal lantern
+     *      temporal candle
+     *      vacuous brazier
+     *  minor features
+     *      lantern latch
+     *  
+     *  see if it's possible to combine and average fuel time for extinguished light sources
+     *  similar to how decay works on food
      */
 
 
