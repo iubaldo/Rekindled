@@ -4,7 +4,7 @@
       "commandName": "Executable",
       "executablePath": "dotnet",
       "commandLineArgs": "$(VINTAGE_STORY)/Vintagestory.dll\r\n--tracelog \r\n-openWorld=\"modsamplestest\" \r\n-pcreativebuilding \r\n--addModPath=\"C:\\Users\\heatb\\Desktop\\game dev\\_vintage story modding\\mods\\Rekindled\\Rekindled\\bin\\Debug\\Mods\"",
-      "workingDirectory": "D:/Games/Vintagestory"
+      "workingDirectory": "D:\\Games (D)\\Vintagestory"
     },
     "Server": {
       "commandName": "Executable",

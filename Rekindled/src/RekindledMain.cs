@@ -33,7 +33,7 @@ namespace Rekindled.src
      *      use quern as an example, right click with item to insert, right click when empty to grind
      *  extinguish
      *      convert to extinguished form
-     *  light
+     *  light source from other sources
      *      this is vanilla now, just make sure to reproduce functionality on other light sources
      *      
      *  crafting
