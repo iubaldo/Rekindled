@@ -106,5 +106,11 @@
       "*-south": { "base": "game:block/clay/bowl-wall", "rotateY": 180 },
       "*-west": { "base": "game:block/clay/bowl-wall", "rotateY": 90 }
     }
+  },
+  {
+    "file": "game:recipes/grid/oillamp.json",
+    "op": "replace",
+    "path": "/output/code",
+    "value": "oillamp-unlit-up"
   }
 ]
