@@ -203,44 +203,6 @@ namespace Rekindled.src
         }
 
 
-        //public override void OnBlockBroken(IPlayer byPlayer = null)
-        //{
-        //    SetBlockDrops();
-        //    base.OnBlockBroken(byPlayer);
-        //}
-
-
-        ////save the current attributes to the block drops when this block is broken
-        //void SetBlockDrops()
-        //{
-        //    if (State == null)
-        //        return;
-
-        //   Block block = Blockentity.Block;
-
-        //    foreach (BlockDropItemStack blockDrop in block.Drops)
-        //    {
-        //        ItemStack itemStack = blockDrop.ResolvedItemstack;
-        //        if (itemStack.Attributes == null)
-        //            itemStack.Attributes = new TreeAttribute();
-
-        //        if (!itemStack.Attributes.HasAttribute(TransientUtil.ATTR_TRANSIENTSTATE))
-        //            itemStack.Attributes[TransientUtil.ATTR_TRANSIENTSTATE] = new TreeAttribute();
-
-        //        ITreeAttribute attr = (ITreeAttribute)itemStack.Attributes[TransientUtil.ATTR_TRANSIENTSTATE];
-
-        //        if (!attr.HasAttribute(TransientUtil.ATTR_CREATED_HOURS))
-        //            attr.SetDouble(TransientUtil.ATTR_CREATED_HOURS, Api.World.Calendar.TotalHours);
-
-        //        attr.SetDouble(TransientUtil.ATTR_CURR_HOURS, State.CurrentFuelHours);
-        //        attr.SetDouble(TransientUtil.ATTR_CURR_DEPLETION, State.CurrentDepletionMul);
-        //        attr.SetDouble(TransientUtil.ATTR_UPDATED_HOURS, State.LastUpdatedTotalHours);
-        //    }
-
-        //    RekindledMain.sapi.Logger.Notification("set block drops");
-        //}
-
-
         public override void GetBlockInfo(IPlayer forPlayer, StringBuilder dsc)
         {
             if (State == null)
