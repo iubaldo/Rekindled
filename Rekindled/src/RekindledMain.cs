@@ -1,12 +1,9 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 
 using Vintagestory.API.Common;
 using Vintagestory.API.Common.Entities;
-using Vintagestory.API.MathTools;
 using Vintagestory.API.Datastructures;
 using Vintagestory.API.Client;
 using Vintagestory.API.Server;
@@ -31,28 +28,44 @@ namespace Rekindled.src
      *      wax candle
      *      vegetable oil (expandedfoods compat)
      * 
-     * see if it's possible to combine and average fuel time for extinguished light sources
-     *  similar to how decay works on food
-     *  don't have to atm since extinct variant has stack size of 1, but it makes it a pain to carry multiple extinct
-     * 
      * interactions
      *  add fuel
-     *      look at quern, right click with item to insert, right click when empty to grind
+     *      use quern as an example, right click with item to insert, right click when empty to grind
      *  extinguish
      *      convert to extinguished form
-     *  light
-     *      look at other mod that lets torches light other torches
-     *      also recipe to convert sources to lit via crafting
-     *  
-     *  new firestarters
-     *  
+     *  light source from other sources
+     *      this is vanilla now, just make sure to reproduce functionality on other light sources
+     *      
+     *  crafting
+     *      relevant recipes should produce unlit sources
+     *      refuel items/stacks via crafting
+     *          should require more fuel the more are in the stack, otherwise one item could refuel multiple sources
+     *      
      *  fix extinguish transitions for rain/submerge
+     *      also extinguish all lit sources in inventory when player is submerged
      *  
      *  reduce depletion mul if not in hand/hotbar
+     *  player emit light while a lit source is in inventory
      *  
-     *  fix lang files to use properties in block descriptions
-     *      fuel time
-     *      fuel items
+     *  
+     *      
+     * After 1.0 release:
+     *  new lights sources
+     *      rushlights
+     *      alternate fuel lamps/lanterns
+     *  new firestarters + related items
+     *      bow drill
+     *      pump drill
+     *  endgame items
+     *      temporal sensor
+     *      temporal lantern
+     *      temporal candle
+     *      vacuous brazier
+     *  minor features
+     *      lantern latch
+     *  
+     *  see if it's possible to combine and average fuel time for extinguished light sources
+     *  similar to how decay works on food
      */
 
 
@@ -73,6 +86,7 @@ namespace Rekindled.src
             System.Diagnostics.Debug.WriteLine("Loading Rekindled...");
 
             // register behaviors
+            api.RegisterBlockEntityClass("blockentitymock", typeof(BlockEntityMock));
             api.RegisterBlockBehaviorClass("blockbehaviortransientlight", typeof(BlockBehaviorTransientLight));
             api.RegisterBlockEntityBehaviorClass("bebehaviortransientlight", typeof(BEBehaviorTransientLight));
             api.RegisterCollectibleBehaviorClass("collectibleBehaviorTLDescription", typeof(CollectibleBehaviorTLDescription));
@@ -83,7 +97,9 @@ namespace Rekindled.src
 
             // only do this clientside
             if (api.Side == EnumAppSide.Server)
+            {
                 harmony.Unpatch(typeof(BELantern).GetMethod(nameof(BELantern.GetBlockInfo)), HarmonyPatchType.Postfix);
+            }
 
             // only do this serverside
             if (api.Side == EnumAppSide.Server)
@@ -149,6 +165,8 @@ namespace Rekindled.src
                         properties = null
                     };
                     block.BlockEntityBehaviors = block.BlockEntityBehaviors.Append(bebehavior);
+                    if (block.Code.FirstCodePart() == "oillamp2")
+                        continue;
                 }
             }
 
@@ -170,8 +188,7 @@ namespace Rekindled.src
                 || block.Code.Path.Contains("torch-cloth")
                 || block.Code.FirstCodePart() == "bunchocandles"
                 || block.Code.FirstCodePart() == "lantern"
-                || block.Code.FirstCodePart() == "oillamp"
-                || block.Code.FirstCodePart() == "oillamp2") // TODO: remove when oillamp patch is working
+                || block.Code.FirstCodePart() == "oillamp")
                 return true;
             else if (block.Code.SecondCodePart() == "torchholder" && block.Code.Path.Contains("filled"))
                 return true;
@@ -323,8 +340,13 @@ namespace Rekindled.src
                     .WithArgs(parsers.WordRange("attribute",
                                                 "createdTotalHours", "lastUpdatedTotalHours", "currentLightState", "currentFuelHours", "currentDepletionMul"),
                               parsers.Double("value"))
-                    .WithDescription("adjust the transientState attributes of a transientlight object in hand")
+                    .WithDescription("Adjust the transientState attributes of a transientlight object in hand, if any.")
                     .HandleWith(OnCmdSetAttr)
+                .EndSubCommand()
+
+                .BeginSubCommand("getBEState")
+                    .WithDescription("Displays the state of the currently selected blockentity, if it is a transient light.")
+                    .HandleWith(OnCmdGetBEState)
                 .EndSubCommand()
                 ;
         }
@@ -431,6 +453,25 @@ namespace Rekindled.src
                     attr.SetDouble(attributeName, value); break;
             }
             slot.MarkDirty();
+
+            Mod.Logger.Notification("Set attribute " + attributeName + " to " + value);
+
+            return TextCommandResult.Success();
+        }
+
+
+        TextCommandResult OnCmdGetBEState(TextCommandCallingArgs args)
+        {
+            BlockSelection blockSel = args.Caller.Player.CurrentBlockSelection;
+            if (blockSel == null)
+                return TextCommandResult.Error("Error, not currently selecting a block");
+
+            BlockEntity be = args.Caller.Player.Entity.World.BlockAccessor.GetBlockEntity(blockSel.Position);
+
+            if (be.GetBehavior<BEBehaviorTransientLight>() == null)
+                return TextCommandResult.Error("Error, selected block is not a transient light");
+
+            sapi.Logger.Notification(be.GetBehavior<BEBehaviorTransientLight>().State.ToString());
 
             return TextCommandResult.Success();
         }

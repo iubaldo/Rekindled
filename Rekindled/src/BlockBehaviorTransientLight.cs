@@ -1,12 +1,10 @@
 ﻿using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Linq;
 using System.Text;
 
 using Vintagestory.API.Common;
 using Vintagestory.API.Datastructures;
 using Vintagestory.API.MathTools;
+using Vintagestory.GameContent;
 
 namespace Rekindled.src
 {
@@ -105,7 +103,18 @@ namespace Rekindled.src
 
             State = behavior.State;
 
-            Block dropBlock = world.BlockAccessor.GetBlock(block.CodeWithVariant("orientation", "up"));
+
+            Block dropBlock;
+            switch (block.Code.FirstCodePart()) 
+            {
+                case "torch":
+                    dropBlock = world.BlockAccessor.GetBlock(block.CodeWithVariant("orientation", "up"));
+                    break;
+                default:
+                    dropBlock = block; 
+                    break;
+            }
+
             ItemStack itemStack = new(dropBlock);
             
             // TODO: create an initialize function for this?
@@ -125,7 +134,7 @@ namespace Rekindled.src
             attr.SetDouble(TransientUtil.ATTR_CURR_DEPLETION, State.CurrentDepletionMul);
             attr.SetDouble(TransientUtil.ATTR_UPDATED_HOURS, State.LastUpdatedTotalHours);
             
-            handling = EnumHandling.PreventDefault;
+            handling = EnumHandling.PreventSubsequent;
 
             return new ItemStack[]{itemStack};
         }
@@ -133,13 +142,25 @@ namespace Rekindled.src
 
         public override ItemStack OnPickBlock(IWorldAccessor world, BlockPos pos, ref EnumHandling handling)
         {
-            if (State == null)
+            BlockEntity be = world.BlockAccessor.GetBlockEntity(pos);
+
+            if (be == null || be.GetBehavior<BEBehaviorTransientLight>() == null)
             {
                 handling = EnumHandling.PassThrough;
                 return base.OnPickBlock(world, pos, ref handling);
             }
 
-            RekindledMain.sapi.Logger.Notification("calling bbehavior onpickblock");
+            BEBehaviorTransientLight bebehavior = be.GetBehavior<BEBehaviorTransientLight>();
+
+            TransientLightState beState = bebehavior.State;
+
+            if (beState == null)
+            {
+                handling = EnumHandling.PassThrough;
+                return base.OnPickBlock(world, pos, ref handling);
+            }
+
+            // RekindledMain.sapi.Logger.Notification("calling bbehavior onpickblock");
           
             ItemStack itemStack = new ItemStack(block);
             if (itemStack.Attributes == null)
@@ -151,14 +172,14 @@ namespace Rekindled.src
             ITreeAttribute attr = (ITreeAttribute)itemStack.Attributes[TransientUtil.ATTR_TRANSIENTSTATE];
 
             if (!attr.HasAttribute(TransientUtil.ATTR_CREATED_HOURS))
-                attr.SetDouble(TransientUtil.ATTR_CREATED_HOURS, State.CreatedTotalHours);
+                attr.SetDouble(TransientUtil.ATTR_CREATED_HOURS, beState.CreatedTotalHours);
 
-            attr.SetInt(TransientUtil.ATTR_TRANSIENTSTATE, (int)State.LightState);
-            attr.SetDouble(TransientUtil.ATTR_CURR_HOURS, State.CurrentFuelHours);
-            attr.SetDouble(TransientUtil.ATTR_CURR_DEPLETION, State.CurrentDepletionMul);
-            attr.SetDouble(TransientUtil.ATTR_UPDATED_HOURS, State.LastUpdatedTotalHours);
+            attr.SetInt(TransientUtil.ATTR_TRANSIENTSTATE, (int)beState.LightState);
+            attr.SetDouble(TransientUtil.ATTR_CURR_HOURS, beState.CurrentFuelHours);
+            attr.SetDouble(TransientUtil.ATTR_CURR_DEPLETION, beState.CurrentDepletionMul);
+            attr.SetDouble(TransientUtil.ATTR_UPDATED_HOURS, beState.LastUpdatedTotalHours);
             
-            handling = EnumHandling.Handled;
+            handling = EnumHandling.PreventSubsequent;
             return itemStack;
         }
     }

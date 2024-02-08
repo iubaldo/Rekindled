@@ -3,8 +3,13 @@
     "Client": {
       "commandName": "Executable",
       "executablePath": "dotnet",
+<<<<<<< HEAD
       "commandLineArgs": "$(VINTAGE_STORY)/Vintagestory.dll\r\n--tracelog \r\n-openWorld=\"oillamptest\" \r\n-pcreativebuilding \r\n--addModPath=\"C:\\Users\\heatb\\Desktop\\game dev\\_vintage story modding\\mods\\Rekindled\\Rekindled\\bin\\Debug\\Mods\"",
       "workingDirectory": "D:/Games/Vintagestory"
+=======
+      "commandLineArgs": "$(VINTAGE_STORY)/Vintagestory.dll\r\n--tracelog \r\n-openWorld=\"modsamplestest\" \r\n-pcreativebuilding \r\n--addModPath=\"C:\\Users\\heatb\\Desktop\\game dev\\_vintage story modding\\mods\\Rekindled\\Rekindled\\bin\\Debug\\Mods\"",
+      "workingDirectory": "D:\\Games (D)\\Vintagestory"
+>>>>>>> addvariants
     },
     "Server": {
       "commandName": "Executable",

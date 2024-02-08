@@ -10,6 +10,8 @@ using Vintagestory.API.Client;
 using Vintagestory.API.Config;
 using Vintagestory.API.Datastructures;
 using Vintagestory.API.MathTools;
+using Vintagestory.API.Util;
+using System.Reflection.Metadata;
 
 namespace Rekindled.src
 {
@@ -231,7 +233,7 @@ namespace Rekindled.src
 
             if (__instance.Code != null && __instance.Code.Domain != "game")
             {
-                Mod mod = world.Api.ModLoader.GetMod(__instance.Code.Domain); // original: inslot.inventory.api
+                Mod mod = world.Api.ModLoader.GetMod(__instance.Code.Domain);
                 dsc.AppendLine(Lang.Get("Mod: {0}", mod?.Info.Name ?? __instance.Code.Domain));
             }
 
@@ -240,6 +242,7 @@ namespace Rekindled.src
         }
 
 
+        // base doesn't call behavior methods
         [HarmonyPrefix]
         [HarmonyPatch(typeof(BlockLantern), "OnPickBlock")]
         public static bool PrefixOnPickBlock(BlockLantern __instance, ref ItemStack __result, IWorldAccessor world, BlockPos pos)
@@ -298,6 +301,7 @@ namespace Rekindled.src
         }
 
 
+        // workaround for setting treeattributes from itemstack to placed blockentity
         [HarmonyPostfix]
         [HarmonyPatch(typeof(BlockGroundAndSideAttachable), "TryPlaceBlock")]
         public static void PostfixTryPlaceBlock(BlockGroundAndSideAttachable __instance, ref bool __result, IWorldAccessor world, IPlayer byPlayer, ItemStack itemstack, BlockSelection blockSel, ref string failureCode)
@@ -318,31 +322,79 @@ namespace Rekindled.src
         }
 
 
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(BlockGroundAndSideAttachable), "OnPickBlock")]
+        public static bool PrefixOnPickBlockBGASA(BlockGroundAndSideAttachable __instance, ref ItemStack __result, IWorldAccessor world, BlockPos pos)
+        {
+            // base method
+            EnumHandling handling = EnumHandling.PassThrough;
+            ItemStack stack = null;
+
+            foreach (BlockBehavior behavior in __instance.BlockBehaviors)
+            {
+                EnumHandling behaviorHandling = EnumHandling.PassThrough;
+                ItemStack bhstack = behavior.OnPickBlock(world, pos, ref behaviorHandling);
+
+                if (behaviorHandling != EnumHandling.PassThrough)
+                {
+                    stack = bhstack;
+                    handling = behaviorHandling;
+                }
+
+                if (handling == EnumHandling.PreventSubsequent) 
+                    break;
+            }
+
+            if (handling == EnumHandling.PassThrough || handling == EnumHandling.Handled) // do default behavior -> original method
+            {
+                Block toReturn = world.BlockAccessor.GetBlock(__instance.CodeWithVariant("orientation", "up"));
+                stack = new ItemStack(toReturn);
+            }
+            
+            __result = stack;
+
+            // skip original method
+            return false;
+        }
+
+
         // base doesn't call behavior methods
         [HarmonyPrefix]
         [HarmonyPatch(typeof(BlockTorch), "GetDrops")]
         public static bool PrefixGetDrops(BlockTorch __instance, ref ItemStack[] __result, IWorldAccessor world, BlockPos pos, IPlayer byPlayer, float dropQuantityMultiplier = 1f)
         {
             EnumHandling handling = EnumHandling.PassThrough;
+            List<ItemStack> dropStacks = new();
+
             foreach (var behavior in __instance.BlockBehaviors)
             {
-                ItemStack[] behaviorStack = behavior.GetDrops(world, pos, byPlayer, ref dropQuantityMultiplier, ref handling);
-                if (handling == EnumHandling.PreventDefault)
+                EnumHandling behaviorHandling = EnumHandling.PassThrough;
+                ItemStack[] behaviorStacks = behavior.GetDrops(world, pos, byPlayer, ref dropQuantityMultiplier, ref behaviorHandling);
+
+                if (behaviorHandling != EnumHandling.PassThrough && behaviorStacks != null)
                 {
-                    __result = behaviorStack;
-                    return false;
+                    dropStacks.AddRange(behaviorStacks);
+                    handling = behaviorHandling;
                 }
+
+                if (handling == EnumHandling.PreventSubsequent)
+                    break;
             }
 
-            // base method
-            ItemStack[] stack;
-            if (__instance.Variant["state"] == "burnedout") 
-                stack = new ItemStack[0];
-
-            Block block = world.BlockAccessor.GetBlock(__instance.CodeWithVariant("orientation", "up"));
-            stack = new ItemStack[] { new ItemStack(block) };
-            __result = stack;
+            if (handling == EnumHandling.PassThrough || handling == EnumHandling.Handled) // do default behavior -> original method
+            {
+                if (__instance.Variant["state"] == "burnedout")
+                    __result = Array.Empty<ItemStack>();
+                else
+                {
+                    Block block = world.BlockAccessor.GetBlock(__instance.CodeWithVariant("orientation", "up"));
+                    dropStacks = new List<ItemStack> { new ItemStack(block) };
+                }
+            } 
+            
+            __result = dropStacks.ToArray();
            
+            // skip original method
             return false;
         }
     }

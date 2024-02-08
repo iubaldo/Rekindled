@@ -17,9 +17,7 @@ namespace Rekindled.src
 {
     public class CollectibleBehaviorFuelItem : CollectibleBehavior
     {
-        public CollectibleBehaviorFuelItem(CollectibleObject collObj) : base(collObj)
-        {
-        }
+        public CollectibleBehaviorFuelItem(CollectibleObject collObj) : base(collObj) { }
 
 
         public override void OnHeldInteractStart(ItemSlot slot, EntityAgent byEntity, BlockSelection blockSel, EntitySelection entitySel, bool firstEvent, ref EnumHandHandling handHandling, ref EnumHandling handling)
