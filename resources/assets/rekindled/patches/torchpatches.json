@@ -101,7 +101,7 @@
 		"width": 1,
 		"height": 3,
 		"output": { "type": "block", "code": "torch-basic-unlit-up", "quantity": 1 }
-	}
+	},
 	{
 		"file": "game:blocktypes/wood/torch.json",
 		"op": "remove",

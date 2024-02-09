@@ -51,8 +51,4 @@
     </Content>
 </ItemGroup>
 
-<ItemGroup>
-  <Content Remove="..\resources\assets\rekindled\patches\oillamppatches.json" />
-</ItemGroup>
-
 </Project>
