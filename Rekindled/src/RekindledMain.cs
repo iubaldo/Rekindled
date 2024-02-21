@@ -18,15 +18,6 @@ namespace Rekindled.src
      * TODO:
      * 
      * Adjust lang file to use {0} placeholder text for showing max fuel
-     *  
-     * patch-add appropriate light sources with state + variants
-     *  change recipes to default craft as unlit
-     *  reenable unused torches and recipes
-     *  add state for lanterns depending on fuel source
-     *      animal fat
-     *      tallow candle
-     *      wax candle
-     *      vegetable oil (expandedfoods compat)
      * 
      * interactions
      *  add fuel
@@ -37,7 +28,6 @@ namespace Rekindled.src
      *      this is vanilla now, just make sure to reproduce functionality on other light sources
      *      
      *  crafting
-     *      relevant recipes should produce unlit sources
      *      refuel items/stacks via crafting
      *          should require more fuel the more are in the stack, otherwise one item could refuel multiple sources
      *      
@@ -63,6 +53,11 @@ namespace Rekindled.src
      *      vacuous brazier
      *  minor features
      *      lantern latch
+     *  add state for lanterns depending on fuel source
+     *      animal fat
+     *      tallow candle
+     *      wax candle
+     *      vegetable oil (expandedfoods compat)
      *  
      *  see if it's possible to combine and average fuel time for extinguished light sources
      *  similar to how decay works on food
