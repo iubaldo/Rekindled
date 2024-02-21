@@ -64,6 +64,10 @@
 			}
 		}
 	},
+
+
+
+
 	{
 		"file": "game:recipes/grid/torch.json",
 		"op": "replace",
@@ -72,7 +76,7 @@
 	},
 	{
 		"file": "game:recipes/grid/torch.json",
-		"op": "adde",
+		"op": "add",
 		"path": "/-",
 		"value": {
 			"ingredientPattern": "R,S",
@@ -93,13 +97,28 @@
 			"ingredientPattern": "Z,R,S",
 			"ingredients": {
 				"Z": { "type": "item", "code": "*", "allowedVariants": ["fat", "resin" ], "quantity": 1 },
-				"R": { "type": "item", "code": "bandage-*" },
+				"R": { "type": "item", "code": "bandage-clean" },
 				"S": { "type": "item", "code": "stick" }
 			},
 			"width": 1,
 			"height": 3,
-			"output": { "type": "block", "code": "torch-basic-unlit-up", "quantity": 1 }
+			"output": { "type": "block", "code": "torch-cloth-unlit-up", "quantity": 1 }
 		}
+	},
+	{
+		"file": "game:recipes/grid/torch.json",
+		"op": "remove",
+		"path": "/4"
+	},
+	{
+		"file": "game:recipes/grid/torch.json",
+		"op": "remove",
+		"path": "/3"
+	},
+	{
+		"file": "game:recipes/grid/torch.json",
+		"op": "remove",
+		"path": "/2"
 	},
 	{
 		"file": "game:recipes/grid/torch.json",
