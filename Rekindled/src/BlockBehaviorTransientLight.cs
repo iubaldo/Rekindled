@@ -2,6 +2,7 @@
 using System.Text;
 
 using Vintagestory.API.Common;
+using Vintagestory.API.Config;
 using Vintagestory.API.Datastructures;
 using Vintagestory.API.MathTools;
 using Vintagestory.GameContent;
@@ -60,6 +61,12 @@ namespace Rekindled.src
         }
 
 
+        public void TryBlockTransition(EnumLightState toLightState)
+        {
+
+        }
+
+
         // transitions the transient light stack to the given toState
         // TODO: make sure props/state update correctly to match the new block
         public ItemStack OnTransitionStack(ItemSlot slot, EnumLightState toLightState)
@@ -84,25 +91,34 @@ namespace Rekindled.src
         }
 
 
-        public override ItemStack[] GetDrops(IWorldAccessor world, BlockPos pos, IPlayer byPlayer, ref float dropChanceMultiplier, ref EnumHandling handling)
+        BEBehaviorTransientLight GetBEBehavior(IWorldAccessor world, BlockPos pos)
         {
             BlockEntity be = world.BlockAccessor.GetBlockEntity(pos);
             if (block.EntityClass != be.Block.EntityClass)
             {
                 RekindledMain.sapi.Logger.Notification("entityclass mismatch");
-                return base.GetDrops(world, pos, byPlayer, ref dropChanceMultiplier, ref handling);
+                return null;
             }
-                
+
 
             var behavior = be.GetBehavior<BEBehaviorTransientLight>();
             if (behavior == null || behavior.State == null)
             {
                 RekindledMain.sapi.Logger.Notification("behavior/state null");
+                return null;
+            }
+
+            return behavior;
+        }
+
+
+        public override ItemStack[] GetDrops(IWorldAccessor world, BlockPos pos, IPlayer byPlayer, ref float dropChanceMultiplier, ref EnumHandling handling)
+        {
+            var behavior = GetBEBehavior(world, pos);
+            if (behavior == null)
                 return base.GetDrops(world, pos, byPlayer, ref dropChanceMultiplier, ref handling);
-            }               
 
             State = behavior.State;
-
 
             Block dropBlock;
             switch (block.Code.FirstCodePart()) 
@@ -142,15 +158,12 @@ namespace Rekindled.src
 
         public override ItemStack OnPickBlock(IWorldAccessor world, BlockPos pos, ref EnumHandling handling)
         {
-            BlockEntity be = world.BlockAccessor.GetBlockEntity(pos);
-
-            if (be == null || be.GetBehavior<BEBehaviorTransientLight>() == null)
+            BEBehaviorTransientLight bebehavior = GetBEBehavior(world, pos);
+            if (bebehavior == null)
             {
                 handling = EnumHandling.PassThrough;
                 return base.OnPickBlock(world, pos, ref handling);
             }
-
-            BEBehaviorTransientLight bebehavior = be.GetBehavior<BEBehaviorTransientLight>();
 
             TransientLightState beState = bebehavior.State;
 
@@ -159,8 +172,6 @@ namespace Rekindled.src
                 handling = EnumHandling.PassThrough;
                 return base.OnPickBlock(world, pos, ref handling);
             }
-
-            // RekindledMain.sapi.Logger.Notification("calling bbehavior onpickblock");
           
             ItemStack itemStack = new ItemStack(block);
             if (itemStack.Attributes == null)
@@ -181,6 +192,35 @@ namespace Rekindled.src
             
             handling = EnumHandling.PreventSubsequent;
             return itemStack;
+        }
+
+
+        // Extinguish light source if hand is empty and sneaking
+        public override bool OnBlockInteractStart(IWorldAccessor world, IPlayer byPlayer, BlockSelection blockSel, ref EnumHandling handling)
+        {
+            RekindledMain.sapi.Logger.Notification("started interact");
+            handling = EnumHandling.Handled;
+
+            if (byPlayer.InventoryManager.ActiveHotbarSlot != null 
+                && (!byPlayer.InventoryManager.ActiveHotbarSlot.Empty || !byPlayer.Entity.Controls.CtrlKey))
+                return base.OnBlockInteractStart(world, byPlayer, blockSel, ref handling);
+
+            BEBehaviorTransientLight bebehavior = GetBEBehavior(world, blockSel.Position);
+            if (bebehavior == null)
+                return base.OnBlockInteractStart(world, byPlayer, blockSel, ref handling);
+
+            handling = EnumHandling.PreventDefault;
+            RekindledMain.sapi.Logger.Notification("attempting extinguish");
+            bebehavior.TryTransition(EnumLightState.Extinct);
+
+            return true;
+        }
+
+
+        public override bool OnBlockInteractStep(float secondsUsed, IWorldAccessor world, IPlayer byPlayer, BlockSelection blockSel, ref EnumHandling handling)
+        {
+            RekindledMain.sapi.Logger.Notification("interact step");
+            return base.OnBlockInteractStep(secondsUsed, world, byPlayer, blockSel, ref handling);
         }
     }
 }

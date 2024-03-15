@@ -32,7 +32,7 @@ namespace Rekindled.src
                 {
                     if (block.EntityClass != Block.EntityClass)
                     {
-                        Api.World.Logger.Warning("BETransient @{0} for Block {1}, but there is {2} at this position? Will delete BE and attempt to recreate it", Pos, Block.Code.ToShortString(), block.Code.ToShortString());
+                        Api.World.Logger.Warning("[Rekindled] BETransient @{0} for Block {1}, but there is {2} at this position? Will delete BE and attempt to recreate it", Pos, Block.Code.ToShortString(), block.Code.ToShortString());
                         api.Event.EnqueueMainThreadTask(delegate
                         {
                             api.World.BlockAccessor.RemoveBlockEntity(Pos);
@@ -42,7 +42,7 @@ namespace Rekindled.src
                     }
                     else
                     {
-                        Api.World.Logger.Error("BETransient @{0} for Block {1}, but there is {2} at this position? Will delete BE", Pos, Block.Code.ToShortString(), block.Code.ToShortString());
+                        Api.World.Logger.Error("[Rekindled] BETransient @{0} for Block {1}, but there is {2} at this position? Will delete BE", Pos, Block.Code.ToShortString(), block.Code.ToShortString());
                         api.Event.EnqueueMainThreadTask(delegate
                         {
                             api.World.BlockAccessor.RemoveBlockEntity(Pos);
@@ -62,7 +62,7 @@ namespace Rekindled.src
             if (api.Side == EnumAppSide.Server)
             {
                 if (listenerId != 0L)
-                    throw new InvalidOperationException("Initializing BEBehaviorTransientLight twice would create a memory and performance leak");
+                    throw new InvalidOperationException("[Rekindled] Initializing BEBehaviorTransientLight twice would create a memory and performance leak");
 
                 listenerId = Blockentity.RegisterGameTickListener(UpdateAndCheckTransition, checkIntervalMs);
             }
@@ -79,7 +79,7 @@ namespace Rekindled.src
 
             if (Blockentity.Block.Attributes == null)
             {
-                Api.World.Logger.Error("BEBehaviorTransientLight @{0}: cannot find block attributes for {1}. Will stop transition timer", Blockentity.Pos, Blockentity.Block.Code.ToShortString());
+                Api.World.Logger.Error("[Rekindled] BEBehaviorTransientLight @{0}: cannot find block attributes for {1}. Will stop transition timer", Blockentity.Pos, Blockentity.Block.Code.ToShortString());
                 Blockentity.UnregisterGameTickListener(listenerId);
                 return;
             }
@@ -89,13 +89,11 @@ namespace Rekindled.src
             if (hoursPassed > 0.05f)
             {
                 double hoursPassedAdjusted = hoursPassed * State.CurrentDepletionMul;
-                RekindledMain.sapi.Logger.Notification("[BE] Fuel: " + Math.Round(State.CurrentFuelHours, 2) + " -> " + Math.Round(State.CurrentFuelHours - hoursPassedAdjusted, 2));
+                RekindledMain.sapi.Logger.Notification("[BE] Fuel: " + Math.Round(State.CurrentFuelHours, 2) + " -> " + Math.Round(State.CurrentFuelHours - hoursPassedAdjusted, 2)); // TODO: remove this for release
                 State.CurrentFuelHours -= hoursPassedAdjusted;
 
                 if (State.CurrentFuelHours <= 0 && State.LightState == EnumLightState.Lit)
-                {
                     TryTransition(EnumLightState.Burnedout);
-                }
 
                 State.LastUpdatedTotalHours = Api.World.Calendar.TotalHours;
             }

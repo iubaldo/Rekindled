@@ -20,8 +20,6 @@ namespace Rekindled.src
      * Adjust lang file to use {0} placeholder text for showing max fuel
      * 
      * interactions
-     *  add fuel
-     *      use quern as an example, right click with item to insert, right click when empty to grind
      *  extinguish
      *      convert to extinguished form
      *  light source from other sources
@@ -30,19 +28,27 @@ namespace Rekindled.src
      *  crafting
      *      refuel items/stacks via crafting
      *          should require more fuel the more are in the stack, otherwise one item could refuel multiple sources
+     *          use copyattributes, but change to different variant
+     *      new idea: create a new fuel source item crafted from animal fat/oil/whatever, and use those to refuel instead
+     *          each light source would take 1 portion of the appropriate fuel to convert extinct/burnedout -> unlit with full fuel
+     *          or, the fuel portion has a durability bar and takes damage whenever it's used to refuel a light source
+     *              functionally the same, but might feel better than having 100 portion items clogging the inventory
      *      
      *  fix extinguish transitions for rain/submerge
      *      also extinguish all lit sources in inventory when player is submerged
+     *      except lanterns
      *  
      *  reduce depletion mul if not in hand/hotbar
      *  player emit light while a lit source is in inventory
      *  
+     *  Bugs:
+     *      model doesn't transition correctly? -> might be an old one, need to retest
      *  
      *      
      * After 1.0 release:
-     *  new lights sources
+     *  new light sources
      *      rushlights
-     *      alternate fuel lamps/lanterns
+     *      alternate fuel lamps/lanterns (wax, fat, plant-based oils)
      *  new firestarters + related items
      *      bow drill
      *      pump drill
@@ -160,8 +166,6 @@ namespace Rekindled.src
                         properties = null
                     };
                     block.BlockEntityBehaviors = block.BlockEntityBehaviors.Append(bebehavior);
-                    if (block.Code.FirstCodePart() == "oillamp2")
-                        continue;
                 }
             }
 
@@ -170,7 +174,7 @@ namespace Rekindled.src
                 if (item.Code == null)
                     continue;
 
-                if (item.Code.Path == "fat")
+                if (item.Code.Path == "fat") // TODO: loop through all fuel items from props to add behaviors dynamically
                     item.CollectibleBehaviors = item.CollectibleBehaviors.Append(new CollectibleBehaviorFuelItem(item));
             }
         }
@@ -343,6 +347,11 @@ namespace Rekindled.src
                     .WithDescription("Displays the state of the currently selected blockentity, if it is a transient light.")
                     .HandleWith(OnCmdGetBEState)
                 .EndSubCommand()
+
+                .BeginSubCommand("getBEBehaviors")
+                    .WithDescription("Displays the blockbehaviors/bebehaviors of the block the player is looking at, if any")
+                    .HandleWith(OnCmdGetBEBlockBehaviors)
+                .EndSubCommand()
                 ;
         }
 
@@ -467,6 +476,34 @@ namespace Rekindled.src
                 return TextCommandResult.Error("Error, selected block is not a transient light");
 
             sapi.Logger.Notification(be.GetBehavior<BEBehaviorTransientLight>().State.ToString());
+
+            return TextCommandResult.Success();
+        }
+
+
+        TextCommandResult OnCmdGetBEBlockBehaviors(TextCommandCallingArgs args)
+        {
+            BlockSelection blockSel = args.Caller.Player.CurrentBlockSelection;
+            if (blockSel == null)
+                return TextCommandResult.Error("Error, not currently selecting a block");
+
+            BlockEntity be = args.Caller.Player.Entity.World.BlockAccessor.GetBlockEntity(blockSel.Position);
+
+            if (be.GetBehavior<BEBehaviorTransientLight>() == null)
+                return TextCommandResult.Error("Error, selected block is not a transient light");
+
+            StringBuilder sb = new StringBuilder();
+            sb.AppendLine(be.Block.Code.ToShortString() + " BlockBehaviors:");
+            foreach(var behavior in be.Block.BlockBehaviors)
+                sb.AppendLine("\t" + behavior.GetType().Name);
+
+
+            sb.AppendLine("\n" + be.Block.Code.ToShortString() + " BlockEntityBehaviors:");
+            foreach (var behavior in be.Block.BlockEntityBehaviors)
+                sb.AppendLine("\t" + behavior.GetType().Name);
+
+
+            sapi.Logger.Notification(sb.ToString());
 
             return TextCommandResult.Success();
         }

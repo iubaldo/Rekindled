@@ -1,6 +1,19 @@
 [
   {
     "file": "game:blocktypes/metal/lantern.json",
+    "op": "remove",
+    "path": "/lightHsv"
+  },
+  {
+    "file": "game:blocktypes/metal/lantern.json",
+    "op": "add",
+    "path": "/lightHsvbyType",
+    "value": {
+      "*-lit-*": [4, 2, 11]
+    }
+  },
+  {
+    "file": "game:blocktypes/metal/lantern.json",
     "op": "add",
     "path": "/attributes",
     "value": {
@@ -10,5 +23,14 @@
         "FuelItems": [ "game:fat" ]
       }
     }
+  },
+  {
+    "file": "game:blocktypes/metal/lantern.json",
+    "op": "replace",
+    "path": "/variantgroups",
+    "value": [
+      { "code": "state", "states": ["extinct", "burnedout", "lit", "unlit"] },
+      { "code": "position", "states": ["up", "down"], "loadFromProperties": "abstract/horizontalorientation" }
+    ]
   }
 ]

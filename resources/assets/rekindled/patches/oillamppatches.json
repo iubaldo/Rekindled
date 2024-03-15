@@ -16,6 +16,19 @@
   },
   {
     "file": "game:blocktypes/clay/oillamp.json",
+    "op": "remove",
+    "path": "/lightHsv"
+  },
+  {
+    "file": "game:blocktypes/clay/oillamp.json",
+    "op": "add",
+    "path": "/lightHsvbyType",
+    "value": {
+      "*-lit-*": [4, 2, 11]
+    }
+  },
+  {
+    "file": "game:blocktypes/clay/oillamp.json",
     "op": "add",
     "path": "/maxStackSizeByType",
     "value": {
