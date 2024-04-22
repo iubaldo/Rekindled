@@ -5,7 +5,7 @@
     "authors": [
         "Landar"
     ],
-    "description": "Overhauls light sources via depletable fuel and new methods of firestarting",
+    "description": "Overhauls most light sources to have depletable fuel, as well as new methods of firestarting",
     "version": "1.0.0",
     "dependencies": {}
 }
