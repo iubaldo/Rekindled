@@ -11,6 +11,8 @@ using Vintagestory.GameContent;
 using Vintagestory.API.Util;
 
 using HarmonyLib;
+using Rekindled.src.Behaviors;
+using Rekindled.src.Blocks;
 
 namespace Rekindled.src
 {
