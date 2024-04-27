@@ -15,6 +15,7 @@ using Vintagestory.API.Util;
 
 namespace Rekindled.src.Behaviors
 {
+    // collects and stores props/state from json attributes
     class CollectibleBehaviorTransientLight : CollectibleBehavior
     {
         ICoreServerAPI sapi;

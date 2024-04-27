@@ -193,7 +193,7 @@ namespace Rekindled.src.Behaviors
 
             ITreeAttribute attr = (ITreeAttribute)byItemStack.Attributes[TransientUtil.ATTR_TRANSIENTSTATE];
 
-            Props = RekindledMain.ResolvePropsFromBlock(Blockentity.Block);
+            Props = TransientUtil.ResolvePropsFromBlock(Blockentity.Block);
             State = new TransientLightState(Props, attr);
 
             Blockentity.MarkDirty(true);

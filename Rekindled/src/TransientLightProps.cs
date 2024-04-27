@@ -88,16 +88,4 @@ namespace Rekindled.src
                    "\nTime Remaining: " + Math.Round(CurrentFuelHours, 2);
         }
     }
-
-
-    public class TransientUtil
-    {
-        public const string ATTR_TRANSIENTSTATE = "transientState"; // name of the actual attribute containing the state
-
-        public const string ATTR_CREATED_HOURS = "createdTotalHours";
-        public const string ATTR_UPDATED_HOURS = "lastUpdatedTotalHours";
-        public const string ATTR_CURR_LIGHTSTATE = "currentLightState";
-        public const string ATTR_CURR_HOURS = "currentFuelHours";
-        public const string ATTR_CURR_DEPLETION = "currentDepletionMul";
-    }
 }

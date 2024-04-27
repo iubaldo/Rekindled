@@ -42,7 +42,7 @@ namespace Rekindled.src.Behaviors
 
         public BlockBehaviorTransientLight(Block block) : base(block)
         {
-            Props = RekindledMain.ResolvePropsFromBlock(block);
+            Props = TransientUtil.ResolvePropsFromBlock(block);
         }
 
 
