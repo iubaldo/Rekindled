@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Vintagestory.API.Common;
+using Vintagestory.API.Config;
 using Vintagestory.API.Datastructures;
 using Vintagestory.API.MathTools;
 using Vintagestory.GameContent;
@@ -81,9 +82,10 @@ namespace Rekindled.src
         }
 
 
+        // for debug, mostly
         public override string ToString()
         {
-            return "State: " + Enum.GetName(typeof(EnumLightState), LightState) +
+            return "State: " + Lang.Get(Enum.GetName(typeof(EnumLightState), LightState)) +
                    "\nFuel: " + Math.Round(CurrentFuelHours / Props.MaxFuelHours * 100.0, 2) + "%" +
                    "\nTime Remaining: " + Math.Round(CurrentFuelHours, 2);
         }

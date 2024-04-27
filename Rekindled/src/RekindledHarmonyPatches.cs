@@ -23,7 +23,7 @@ namespace Rekindled.src
         [HarmonyPatch(typeof(CollectibleObject), "UpdateAndGetTransitionStatesNative")]
         public static void PrefixUpdateAndGetTransitionStatesNative(IWorldAccessor world, ItemSlot inslot)
         {
-            RekindledMain.UpdateAndGetTransientState(world, inslot);
+            TransientUtil.UpdateAndGetTransientState(world, inslot);
         }
 
 
@@ -32,7 +32,7 @@ namespace Rekindled.src
         [HarmonyPatch(typeof(BlockTorch), "OnGroundIdle")]
         public static void PostfixOnGroundIdle(EntityItem entityItem)
         {
-            RekindledMain.UpdateAndGetTransientState(entityItem.World, entityItem.Slot);
+            TransientUtil.UpdateAndGetTransientState(entityItem.World, entityItem.Slot);
         }
 
 

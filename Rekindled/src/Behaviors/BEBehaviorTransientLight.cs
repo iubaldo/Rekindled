@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Text;
 using Vintagestory.API.Common;
+using Vintagestory.API.Config;
 using Vintagestory.API.Datastructures;
 
 namespace Rekindled.src.Behaviors
@@ -208,9 +209,14 @@ namespace Rekindled.src.Behaviors
                 return;
             }
 
-            dsc.AppendLine("State: " + State.LightState.GetName() +
-                    "\nFuel Hours Remaining: " + Math.Round(State.CurrentFuelHours, 2) + "/" + Math.Round(Props.MaxFuelHours, 2) + " (" + Math.Round(State.CurrentFuelHours / Props.MaxFuelHours * 100.0, 2) + "%)" +
-                    "\nCurrent Depletion Multiplier: x" + Math.Round(State.CurrentDepletionMul, 2) + "\n");
+            double roundedCurrentFuelHours = Math.Round(State.CurrentFuelHours, 2);
+            double roundedMaxFuelHours = Math.Round(Props.MaxFuelHours, 2);
+            double roundedFuelPercentage = Math.Round(State.CurrentFuelHours / Props.MaxFuelHours * 100.0, 2);
+            double roundedDepletionMul = Math.Round(State.CurrentDepletionMul, 2);
+
+            dsc.AppendLine(Lang.Get("State: {0}", Lang.Get(State.LightState.GetName())));
+            dsc.AppendLine(Lang.Get("Fuel Hours Remaining: {0}/{1} ({2}%)", roundedCurrentFuelHours, roundedMaxFuelHours, roundedFuelPercentage));
+            dsc.AppendLine(Lang.Get("Current Depletion Multiplier: x{0}", roundedDepletionMul));
         }
     }
 }

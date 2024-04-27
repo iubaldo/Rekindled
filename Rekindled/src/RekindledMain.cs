@@ -66,6 +66,11 @@ namespace Rekindled.src
      *      tallow candle
      *      wax candle
      *      vegetable oil (expandedfoods compat)
+     *     
+     *  compat for other mods?
+     *      expanded foods
+     *      a wearable light
+     *      brazier
      *  
      *  see if it's possible to combine and average fuel time for extinguished light sources
      *  similar to how decay works on food
@@ -92,7 +97,7 @@ namespace Rekindled.src
             api.RegisterBlockEntityClass("blockentitymock", typeof(BlockEntityMock));
             api.RegisterBlockBehaviorClass("blockbehaviortransientlight", typeof(BlockBehaviorTransientLight));
             api.RegisterBlockEntityBehaviorClass("bebehaviortransientlight", typeof(BEBehaviorTransientLight));
-            api.RegisterCollectibleBehaviorClass("collectibleBehaviorTLDescription", typeof(CollectibleBehaviorTLDescription));
+            api.RegisterCollectibleBehaviorClass("collectibleBehaviorTLDescription", typeof(CollectibleBehaviorTransientLightDescription));
             api.RegisterCollectibleBehaviorClass("collectibleBehaviorFuelItem", typeof(CollectibleBehaviorFuelItem));
 
             // apply harmony patches
@@ -149,7 +154,7 @@ namespace Rekindled.src
             if (api.Side == EnumAppSide.Server)
                 AddBehaviors(api);
 
-            api.Logger.StoryEvent("The flames in the dark...");
+            api.Logger.StoryEvent("The flames alight...");
         }
 
 
@@ -160,7 +165,7 @@ namespace Rekindled.src
                 if (block.Code != null && TransientUtil.IsBlockTransientLight(block))
                 {
                     block.BlockBehaviors = block.BlockBehaviors.Append(new BlockBehaviorTransientLight(block));
-                    block.CollectibleBehaviors = block.CollectibleBehaviors.Append(new CollectibleBehaviorTLDescription(block));
+                    block.CollectibleBehaviors = block.CollectibleBehaviors.Append(new CollectibleBehaviorTransientLightDescription(block));
 
                     var bebehavior = new BlockEntityBehaviorType
                     {
@@ -179,114 +184,6 @@ namespace Rekindled.src
                 if (item.Code.Path == "fat") // TODO: loop through all fuel items from props to add behaviors dynamically
                     item.CollectibleBehaviors = item.CollectibleBehaviors.Append(new CollectibleBehaviorFuelItem(item));
             }
-        }
-
-
-        public static ItemStack UpdateAndGetTransientState(IWorldAccessor world, ItemSlot inslot)
-        {
-            if (inslot is ItemSlotCreative)
-                return null;
-
-            ItemStack itemStack = inslot.Itemstack;
-            if (itemStack == null)
-                return null;
-
-            if (!inslot.Itemstack.Collectible.HasBehavior(typeof(BlockBehaviorTransientLight))) // TODO: update this for generic light sources (not just blocks)
-                return null;
-
-
-            var behavior = inslot.Itemstack.Block.GetBehavior(typeof(BlockBehaviorTransientLight), false) as BlockBehaviorTransientLight;
-            TransientLightProps props = behavior.Props;
-
-            double currentTotalHours = world.Calendar.TotalHours;
-
-            if (itemStack.Attributes == null)
-                itemStack.Attributes = new TreeAttribute();
-
-            if (!itemStack.Attributes.HasAttribute(TransientUtil.ATTR_TRANSIENTSTATE))
-                itemStack.Attributes[TransientUtil.ATTR_TRANSIENTSTATE] = new TreeAttribute();
-
-            ITreeAttribute attr = (ITreeAttribute)itemStack.Attributes[TransientUtil.ATTR_TRANSIENTSTATE];
-
-
-            EnumLightState lightState;
-            double currentFuelHours;
-            double currentDepletionMul;
-
-
-            if (!attr.HasAttribute(TransientUtil.ATTR_CREATED_HOURS)) // create new data
-            {
-                attr.SetDouble(TransientUtil.ATTR_CREATED_HOURS, currentTotalHours);
-                attr.SetDouble(TransientUtil.ATTR_UPDATED_HOURS, currentTotalHours);
-
-                lightState = behavior.GetLightState();
-                currentFuelHours = behavior.Props.MaxFuelHours;
-                currentDepletionMul = behavior.Props.BaseDepletionMul;
-
-                attr.SetInt(TransientUtil.ATTR_CURR_LIGHTSTATE, (int)lightState);
-                attr.SetDouble(TransientUtil.ATTR_CURR_HOURS, currentFuelHours);
-                attr.SetDouble(TransientUtil.ATTR_CURR_DEPLETION, currentDepletionMul);
-            }
-            else
-            {
-                lightState = (EnumLightState)attr.GetInt(TransientUtil.ATTR_CURR_LIGHTSTATE);
-                currentFuelHours = attr.GetDouble(TransientUtil.ATTR_CURR_HOURS);
-                currentDepletionMul = attr.GetDouble(TransientUtil.ATTR_CURR_DEPLETION);
-            }
-
-            double hoursPassed = currentTotalHours - attr.GetDouble(TransientUtil.ATTR_UPDATED_HOURS);
-
-            ItemStack transitionStack = null;
-            if (lightState == EnumLightState.Lit)
-            {
-                if (hoursPassed > 0.05f)
-                {
-                    double hoursPassedAdjusted = hoursPassed * currentDepletionMul;
-                    RekindledMain.sapi.Logger.Notification("[ItemSlot] Fuel: " + Math.Round(currentFuelHours, 2) + " -> " + Math.Round(currentFuelHours - hoursPassedAdjusted, 2));
-                    currentFuelHours -= hoursPassedAdjusted;
-                    attr.SetDouble(TransientUtil.ATTR_CURR_HOURS, currentFuelHours);
-                }
-
-                if (currentFuelHours <= 0 && world.Side == EnumAppSide.Server) // perform transition to burnedout state
-                {
-                    ItemStack newStack = behavior.OnTransitionStack(inslot, EnumLightState.Burnedout);
-
-                    inslot.Itemstack.SetFrom(newStack);
-
-                    behavior = inslot.Itemstack.Block.GetBehavior(typeof(BlockBehaviorTransientLight), false) as BlockBehaviorTransientLight;
-                    attr = (ITreeAttribute)inslot.Itemstack.Attributes[TransientUtil.ATTR_TRANSIENTSTATE];
-
-                    attr.SetInt(TransientUtil.ATTR_CURR_LIGHTSTATE, (int)behavior.GetLightState());
-                    attr.SetInt(TransientUtil.ATTR_CURR_HOURS, 0);
-
-                    transitionStack = inslot.Itemstack;
-
-                    inslot.MarkDirty();
-                }
-            }
-
-            if (hoursPassed > 0.05f)
-                attr.SetDouble(TransientUtil.ATTR_UPDATED_HOURS, currentTotalHours);
-
-            if (behavior.State == null)
-                behavior.State = new TransientLightState(props)
-                {
-                    LightState = lightState,
-                    LastUpdatedTotalHours = attr.GetDouble(TransientUtil.ATTR_UPDATED_HOURS),
-                    CurrentFuelHours = currentFuelHours,
-                    CurrentDepletionMul = currentDepletionMul,
-                    CreatedTotalHours = attr.GetDouble(TransientUtil.ATTR_CREATED_HOURS)
-                };
-            else
-            {
-                behavior.State.LightState = lightState;
-                behavior.State.LastUpdatedTotalHours = attr.GetDouble(TransientUtil.ATTR_UPDATED_HOURS);
-                behavior.State.CurrentFuelHours = currentFuelHours;
-                behavior.State.CurrentDepletionMul = currentDepletionMul;
-                behavior.State.CreatedTotalHours = attr.GetDouble(TransientUtil.ATTR_CREATED_HOURS);
-            }
-
-            return transitionStack;
         }
 
 

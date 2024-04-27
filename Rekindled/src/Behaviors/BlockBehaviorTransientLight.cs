@@ -4,16 +4,16 @@ using Vintagestory.API.Common;
 using Vintagestory.API.Config;
 using Vintagestory.API.Datastructures;
 using Vintagestory.API.MathTools;
-using Vintagestory.GameContent;
+using static HarmonyLib.Code;
 
 namespace Rekindled.src.Behaviors
 {
     // TODO: make this inherit from a generic transient light class to allow for item transient lights as well
 
 
-    public class CollectibleBehaviorTLDescription : CollectibleBehavior
+    public class CollectibleBehaviorTransientLightDescription : CollectibleBehavior
     {
-        public CollectibleBehaviorTLDescription(CollectibleObject collObj) : base(collObj) { }
+        public CollectibleBehaviorTransientLightDescription(CollectibleObject collObj) : base(collObj) { }
 
 
         public override void GetHeldItemInfo(ItemSlot inSlot, StringBuilder dsc, IWorldAccessor world, bool withDebugInfo)
@@ -26,9 +26,14 @@ namespace Rekindled.src.Behaviors
             var props = inSlot.Itemstack.Block.Attributes["transientLightProps"].AsObject<TransientLightProps>();
             ITreeAttribute attr = (ITreeAttribute)inSlot.Itemstack.Attributes["transientState"];
 
-            dsc.AppendLine("\nState: " + ((EnumLightState)attr.GetInt("currentLightState")).GetName() +
-                    "\nFuel remaining: " + Math.Round(attr.GetDouble("currentFuelHours") / props.MaxFuelHours * 100, 2) + "%" +
-                    "\nDepletion multiplier: x" + Math.Round(attr.GetDouble("currentDepletionMul"), 2));
+            double roundedCurrentFuelHours = Math.Round(attr.GetDouble("currentFuelHours"), 2);
+            double roundedMaxFuelHours = Math.Round(props.MaxFuelHours, 2);
+            double roundedFuelPercentage = Math.Round(attr.GetDouble("currentFuelHours") / props.MaxFuelHours * 100.0, 2);
+            double roundedDepletionMul = Math.Round(attr.GetDouble("currentDepletionMul"), 2);
+
+            dsc.AppendLine(Lang.Get("State: {0}", Lang.Get(((EnumLightState)attr.GetInt("currentLightState")).GetName())));
+            dsc.AppendLine(Lang.Get("Fuel Hours Remaining: {0}/{1} ({2}%)", roundedCurrentFuelHours, roundedMaxFuelHours, roundedFuelPercentage));
+            dsc.AppendLine(Lang.Get("Current Depletion Multiplier: x{0}", roundedDepletionMul));
         }
     }
 
